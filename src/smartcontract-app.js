@@ -15,21 +15,33 @@ const inputString = require("input-string")
 const inputByte = require("input-byte")
 const inputPayable = require("input-payable")
 const copy = require('copy-text-to-clipboard')
-
-const colors = require('theme')
-//const theme = require('theme')
-//const setTheme = require('setTheme')
-//setTheme(theme())
-
+const theme = require('theme')
+var colors = setTheme('darkTheme')
 // Styling variables
 
 var css
 var fonts = [ "https://use.fontawesome.com/releases/v5.8.2/css/all.css",
-  'https://fonts.googleapis.com/css?family=Overpass+Mono']
+  'https://fonts.googleapis.com/css?family=Nunito&display=swap']
 var fontAwesome = bel`<link href=${fonts[0]} rel='stylesheet' type='text/css'>`
 var overpassMono = bel`<link href=${fonts[1]} rel='stylesheet' type='text/css'>`
 document.head.appendChild(fontAwesome)
 document.head.appendChild(overpassMono)
+
+// ===== Switch Themes =====
+function themeSwitch() {
+  return bel`
+  <section class=${css.themeSwitch}>
+    <span class="${css.colorplate} ${css.cubeWhite}" onclick=${() => { colors = setTheme('lightTheme'); console.log(colors) }}></span>
+    <span class="${css.colorplate} ${css.cubeDark}" onclick=${() => { colors = setTheme('darkTheme'); console.log(colors) }}></span>
+  </section>
+  `
+}
+
+function setTheme(name) {
+  let colors = Object.assign({}, theme(name))
+  return colors
+}
+
 
 /******************************************************************************
   ETHERS
@@ -174,16 +186,15 @@ function displayContractUI(result) {   // compilation result metadata
       var inputField = getInputField( {theme, type, cb})
       var inputContainer = bel`
         <div class=${css.inputContainer}>
-          <div class=${css.inputParam} title="data type: ${type}">${name || 'key'}</div>
+          <label class=${css.inputParam} title="data type: ${type}">${name || 'key'}</label>
           <div class=${css.inputFields}>${inputField}</div>
-          <div class=${css.output}></div>
         </div>`
       return inputContainer
       function cb (msg, el, value) {
         var oldOutput = el.parentNode.querySelector("[class^='output']")
-        var output = oldOutput ? oldOutput : output = bel`<div class=${css.output}></div>`
+        var output = oldOutput ? oldOutput : output = bel`<span class=${css.output}></span>`
         output.innerHTML = ""
-        output.innerHTML = msg ? `<a class=${css.valError} title="${msg}"><i class="fa fa-exclamation"></i></a>` : `<a class=${css.valSuccess} title="The value is valid."><i class="fa fa-check"></i></a>`
+        output.innerHTML = msg ? `<span class=${css.valError} title="${msg}"><i class="fa fa-exclamation"></i></span>` : `<span class=${css.valSuccess} title="The value is valid."><i class="fa fa-check"></i></span>`
         el.parentNode.appendChild(output)
       }
     }
@@ -207,21 +218,23 @@ function displayContractUI(result) {   // compilation result metadata
 
     function functions (fn) {
       var label = fn.stateMutability
-      var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><div class=${css.name}>${fn.name}</div></a>`
-      var title = bel`<div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</div>`
-      var send = bel`<div class=${css.send} onclick=${e => sendTx(fn.name, label, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
+      var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><span class=${css.name}>${fn.name}</span></a>`
+      var title = bel`<h3 class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</h3>`
+      var send = bel`<button class="${css.button} ${css.send}" onclick=${e => sendTx(fn.name, label, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></button>`
       var functionClass = css[label]
       var el = bel`
       <div class=${css.fnContainer}>
         <div class="${functionClass} ${css.function}">
           ${title}
-          <ul class=${css.visible}>
+          <div class=${css.visible}>
             ${fn.inputs}
+            <div class=${css.actions}>
             ${send}
-          </ul>
+            </div>
+          </div>
         </div>
       </div>`
-      if (label === 'payable')  send.parentNode.prepend(inputPayable(label))
+      if (label === 'payable')  send.parentNode.insertAdjacentElement('beforeBegin', inputPayable(label))
       return el
     }
 
@@ -251,7 +264,7 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     function toggleAll (e) {
-      var fnContainer = e.currentTarget.parentElement.parentElement.children[2]
+      var fnContainer = e.currentTarget.parentElement.parentElement.children[3]
       var constructorToggle = e.currentTarget.children[0]
       var constructorIcon = constructorToggle.children[0]
       constructorToggle.removeChild(constructorIcon)
@@ -312,14 +325,10 @@ function displayContractUI(result) {   // compilation result metadata
         params.classList.remove(css.visible)
         params.classList.add(css.hidden)
         removeLogs(fn)
-        fn.style.border = 'none'
-        fn.style.marginBottom = 0
       } else {
         params.classList.remove(css.hidden)
         params.classList.add(css.visible)
         addLogs(fn)
-        fn.style.border = `2px dashed ${colors.darkSmoke}`
-        fn.style.marginBottom = '2em'
       }
     }
 
@@ -360,26 +369,28 @@ function displayContractUI(result) {   // compilation result metadata
       }
     }
 
-    var topContainer = bel`<div class=${css.topContainer}></div>`
+    var topContainer = bel`<section class=${css.topContainer}></section>`
     var ctor = bel`<div class="${css.ctor}">
       ${metadata.constructorInput}
-      <div class=${css.deploy} onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
-        <div class=${css.deployTitle}>Publish</div>
-        <i class="${css.icon} fa fa-arrow-circle-right"></i>
+      <div class=${css.actions}>
+        <button class="${css.button} ${css.deploy}" onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
+          <i class="${css.icon} fa fa-arrow-circle-right"></i>
+        </button>
       </div>
     </div>`
     topContainer.appendChild(ctor)
 
     return bel`
     <div class=${css.preview}>
-      <div class=${css.constructorFn}>
-        <div class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
+      ${themeSwitch()}
+      <section class=${css.constructorFn}>
+        <h1 class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
           ${metadata.constructorName}
-          <span class=${css.icon}><i class="fa fa-minus-circle" title="Expand to see the details"></i></span>
-        </div>
-      </div>
+          <span class="${css.icon} ${css.expend}"><i class="fa fa-minus-circle" title="Expand to see the details"></i></span>
+        </h1>
+      </section>
       ${topContainer}
-      <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>
+      <section class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</section>
     </div>`
   }
 }
@@ -389,421 +400,396 @@ function displayContractUI(result) {   // compilation result metadata
 ******************************************************************************/
 
 css = csjs`
-  @media only screen and (max-width: 3000px) {
-    .preview {
-      padding: 1% 2%;
-      min-width: 350px;
-      min-height: 100vh;
-      font-family: 'Overpass Mono', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background-color: ${colors.dark};
-      color: ${colors.whiteSmoke};
-    }
-    .error {
-      border: 1px solid ${colors.violetRed};
-      position: relative;
-      padding: 1em;
-    }
-    .errorTitle {
-      position: absolute;
-      top: -14px;
-      left: 20px;
-      background-color: ${colors.dark};
-      padding: 0 5px 0 5px;
-      font-size: 1.3rem;
-      color: ${colors.violetRed};
-    }
-    .errorIcon {
-      font-size: 1.3rem;
-    }
-    .visible {
-      visibility: visible;
-      height: 100%;
-      padding: 0;
-    }
-    .hidden {
-      visibility: hidden;
-      height: 0;
-    }
-    .txReturn {
-      position: relative;
-      border: 2px dashed ${colors.darkSmoke};
-      border-top: none;
-      min-width: 230px;
-      top: -41px;
-      left: 20px;
-      min-height: 80px;
-      width: 546px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-    }
-    .deploying {
-      font-size: 0.9rem;
-      margin-left: 3%;
-    }
-    .txReturnItem {
-      position: relative;
-      font-size: 0.7rem;
-      display: flex;
-      color: ${colors.whiteSmoke};
-      border: 1px solid ${colors.darkSmoke};
-      width: 87%;
-      margin: 3%;
-      padding: 3%;
-      justify-content: space-between;
-      flex-direction: column;
-    }
-    .contractName {
-      cursor: pointer;
-      font-size: 2rem;
-      font-weight: bold;
-      color: ${colors.whiteSmoke};
-      margin: 10px 0 20px 10px;
-      display: flex;
-      align-items: end;
-    }
-    .contractName:hover {
-      ${hover()}
-    }
-    .fnName {
-      font-size: 1em;
-      display: flex;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .faIcon {
-      position: absolute;
-      top: -16px;
-      left: 0;
-    }
-    .name {
-      font-size: 0.9em;
-    }
-    .stateMutability {
-      margin-left: 5px;
-      color: ${colors.whiteSmoke};
-      border-radius: 20px;
-      border: 1px solid;
-      padding: 1px;
-      font-size: 0.9rem;
-      width: 65px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .constructorFn {
-      padding-top: 18px;
-      width: 600px;
-    }
-    .functions {
-      font-size: 1.3rem;
-      width: 570px;
-    }
-    .title {
-      font-size: 1.3rem;
-      display: flex;
-      align-items: baseline;
-      position: absolute;
-      top: -13px;
-      left: 20px;
-      background-color: ${colors.dark};
-    }
-    .title:hover {
-      ${hover()}
-    }
-    .deployTitle {
-      font-size: 1.3rem;
-      background-color: ${colors.dark};
-      padding: 0 5px 0 0;
-      font-weight: 800;
-    }
-    .deploy {
-      color: ${colors.whiteSmoke};
-      display: flex;
-      align-items: center;
-      bottom: -15px;
-      right: -12px;
-      font-size: 1.8rem;
-      position: absolute;
-      background-color: ${colors.dark};
-      cursor: pointer;
-    }
-    .deploy:hover {
-      ${hover()}
-    }
-    .send {
-      display: flex;
-      align-items: baseline;
-      bottom: -16px;
-      right: 13px;
-      font-size: 2rem;
-      position: absolute;
-      background-color: ${colors.dark};
-      color: ${colors.darkSmoke};
-      padding-right: 5px;
-    }
-    .send:hover {
-      ${hover()}
-    }
-    .bounce {
-      animation: bounceRight 2s infinite;
-    }
-    @-webkit-keyframes bounceRight {
-    0% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    20% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    40% {-webkit-transform: translateX(-30px);
-      transform: translateX(-30px);}
-    50% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    60% {-webkit-transform: translateX(-15px);
-      transform: translateX(-15px);}
-    80% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    100% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    }
-    @-moz-keyframes bounceRight {
-      0% {transform: translateX(0);}
-      20% {transform: translateX(0);}
-      40% {transform: translateX(-30px);}
-      50% {transform: translateX(0);}
-      60% {transform: translateX(-15px);}
-      80% {transform: translateX(0);}
-      100% {transform: translateX(0);}
-    }
-    @keyframes bounceRight {
-      0% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-      20% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-      40% {-ms-transform: translateX(-30px);
-        transform: translateX(-30px);}
-      50% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-      60% {-ms-transform: translateX(-15px);
-        transform: translateX(-15px);}
-      80% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-      100% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-    }
-    .fnContainer {
-      position: relative;
-    }
-    .function {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      margin-left: 20px;
-      margin-bottom: 10%;
-      border: 2px dashed ${colors.darkSmoke};
-    }
-    .topContainer {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      border: 2px dashed ${colors.darkSmoke};
-      padding: 2em 1em 3em 0em;
-      width: 540px;
-      margin: 0 0 5em 20px;
-      font-size: 0.75em;
-    }
-    .ctor {}
-    .signature {}
-    .pure {
-      color: ${colors.yellow};
-    }
-    .view {
-      color: ${colors.lavender};
-    }
-    .nonpayable {
-      color: ${colors.turquoise};
-    }
-    .payable {
-      color: ${colors.orange};
-    }
-    .icon {
-      margin-left: 5px;
-      font-size: 0.9em;
-    }
-    .output {
-      font-size: 0.7rem;
-      display: flex;
-      align-self: center;
-      position: absolute;
-      right: -17px;
-    }
-    .valError {
-      color: ${colors.violetRed};
-      display: flex;
-      align-self: center;
-    }
-    .valSuccess {
-      color: ${colors.aquaMarine};
-      display: flex;
-      align-self: center;
-    }
-    .inputContainer {
-      font-family: 'Overpass Mono', sans-serif;
-      margin: 15px 0 15px 0;
-      display: flex;
-      align-items: center;
-      font-size: 0.9rem;
-      color: ${colors.whiteSmoke};
-    }
-    .inputParam {
-      color: ${colors.slateGrey};
-      display: flex;
-      justify-content: center;
-      font-size: 0.9rem;
-      display: flex;
-      min-width: 200px;
-    }
-    .inputFields {
-    }
-    .inputType {
-    }
-    .inputField {
-      ${inputStyle()}
-      position: relative;
-      font-size: 0.9rem;
-      color: ${colors.whiteSmoke};
-      border-color: ${colors.slateGrey};
-      border-radius: 0.2em;
-      background-color: ${colors.darkSmoke};
-      text-align: center;
-      display: flex;
-      width: 100%;
-    }
-    .inputField::placeholder {
-      color: ${colors.whiteSmoke};
-      text-align: center;
-      opacity: 0.5;
-    }
-    .integerValue {
-      ${inputStyle()}
-      font-size: 0.9rem;
-      color: ${colors.whiteSmoke};
-      background-color: ${colors.darkSmoke};
-      border-radius: 0.2em;
-      display: flex;
-      text-align: center;
-      width: 60%;
-    }
-    .integerValue::placeholder {
-      color: ${colors.whiteSmoke};
-      text-align: center;
-      opacity: 0.5;
-    }
-    .integerSlider {
-      width: 40%;
-      border: 1px solid ${colors.slateGrey};
-      background: ${colors.darkSmoke};
-      -webkit-appearance: none;
-      height: 1px;
-    }
-    .integerSlider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      border: 1px solid ${colors.slateGrey};
-      border-radius: 0.2em;
-      height: 22px;
-      width: 10px;
-      background: ${colors.darkSmoke};
-      cursor: pointer;
-    }
-    .integerField {
-      position: relative;
-      display: flex;
-      width: 300px;
-      align-items: center;
-    }
-    .booleanField {
-      position: relative;
-      display: flex;
-      width: 300px;
-      align-items: baseline;
-      font-size: 0.9rem;
-    }
-    .stringField {
-      position: relative;
-      display: flex;
-      width: 300px;
-      justify-content: center;
-    }
-    .byteField {
-      position: relative;
-      display: flex;
-      width: 300px;
-      justify-content: center;
-    }
-    .addressField {
-      position: relative;
-      display: flex;
-      width: 300px;
-      justify-content: center;
-    }
-    .keyField {
-      ${inputStyle()}
-      border-right: none;
-      background-color: ${colors.aquaMarine};
-      border-color: ${colors.whiteSmoke};
-    }
-    .false {
-      ${inputStyle()}
-      border-right: none;
-      width: 50%;
-      text-align: center;
-      cursor: pointer;
-    }
-    .true {
-      ${inputStyle()}
-      width: 50%;
-      text-align: center;
-      cursor: pointer;
-    }
-    .arrayContainer {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 10px;
-    }
-    .arrayPlusMinus {
-      margin: 10px;
-    }
-    .arrayPlus {
-      cursor: pointer;
-    }
-    .arrayMinus {
-      cursor: pointer;
-    }
+html {
+  font-size: 62.5%;
+}
+body {
+  margin: 0;
+  background-color: ${colors.bodyBackgroundColor};
+  font-family: ${colors.bodyFont};
+  font-size: ${colors.bodyFontSize};
+  color: ${colors.bodyTextColor}
+}
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+.themeSwitch {
+  text-align: right;
+}
+button {
+  border: none;
+  background: none;
+  outline: none;
+}
+.button {
+}
+.colorplate {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-left: 5px;
+  border: 1px solid #888;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.cubeWhite {
+  background-color: #fff;
+}
+.cubeDark {
+  background-color: #1D1D26;
+}
+.preview {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1% 2%;
+}
+.error {
+  border: 1px solid ${colors.violetRed};
+  position: relative;
+  padding: 1em;
+}
+.errorTitle {
+  position: absolute;
+  top: -14px;
+  left: 20px;
+  background-color: ${colors.dark};
+  padding: 0 5px 0 5px;
+  font-size: 1.3rem;
+  color: ${colors.violetRed};
+}
+.errorIcon {
+  font-size: 1.3rem;
+}
+.visible {
+  visibility: visible;
+  height: 100%;
+}
+.hidden {
+  visibility: hidden;
+  height: 0;
+}
+.txReturn {
+}
+.deploying {
+  font-size: 1.8rem;
+  margin-left: 3%;
+}
+.txReturnItem {
+  font-size: ${colors.txReturnItemFontSize};
+  color: ${colors.txReturnItemColor};
+  background-color: ${colors.txReturnItemBackgroundColor}
+}
+.contractName {
+  position: relative;
+  cursor: pointer;
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  color: ${colors.contractNameColor};
+  margin: 20px 0;
+}
+.contractName:hover {
+  ${hover()}
+}
+.fnName {
+  font-size: 2rem;
+  text-decoration: none;
+}
+.faIcon {
+}
+.name {
+  font-size: ${colors.nameFontSize};
+}
+.stateMutability {
+  margin-left: 5px;
+  color: ${colors.whiteSmoke};
+  border-radius: 20px;
+  padding: 1px;
+  font-size: 1.4rem;
+}
+.constructorFn {
+}
+.functions {
+}
+.title {
+  font-size: ${colors.titleFontSize};
+  margin-bottom: 16px;
+}
+.deployTitle {
+  font-size: ${colors.deployTitleFontSize};
+  background-color: transparent;
+  padding: 0 5px 0 0;
+  font-weight: 800;
+}
+.deploy {
+  color: ${colors.deployColor};
+  font-size: ${colors.deployFontSize};
+  background-color: ${colors.deployBackgroundColor};
+  padding: 0;
+} 
+.deploy:hover, .send:hover, .title:hover {
+  ${hover()}
+}
+.send {
+  color: ${colors.sendColor};
+  font-size: ${colors.sendFontSize};
+  background-color: ${colors.sendBackgroundColor};
+  padding: 0;
+}
+.bounce {
+  animation: bounceRight 2s infinite;
+}
+@-webkit-keyframes bounceRight {
+0% {-webkit-transform: translateX(0);
+  transform: translateX(0);}
+20% {-webkit-transform: translateX(0);
+  transform: translateX(0);}
+40% {-webkit-transform: translateX(-30px);
+  transform: translateX(-30px);}
+50% {-webkit-transform: translateX(0);
+  transform: translateX(0);}
+60% {-webkit-transform: translateX(-15px);
+  transform: translateX(-15px);}
+80% {-webkit-transform: translateX(0);
+  transform: translateX(0);}
+100% {-webkit-transform: translateX(0);
+  transform: translateX(0);}
+}
+@-moz-keyframes bounceRight {
+  0% {transform: translateX(0);}
+  20% {transform: translateX(0);}
+  40% {transform: translateX(-30px);}
+  50% {transform: translateX(0);}
+  60% {transform: translateX(-15px);}
+  80% {transform: translateX(0);}
+  100% {transform: translateX(0);}
+}
+@keyframes bounceRight {
+  0% {-ms-transform: translateX(0);
+    transform: translateX(0);}
+  20% {-ms-transform: translateX(0);
+    transform: translateX(0);}
+  40% {-ms-transform: translateX(-30px);
+    transform: translateX(-30px);}
+  50% {-ms-transform: translateX(0);
+    transform: translateX(0);}
+  60% {-ms-transform: translateX(-15px);
+    transform: translateX(-15px);}
+  80% {-ms-transform: translateX(0);
+    transform: translateX(0);}
+  100% {-ms-transform: translateX(0);
+    transform: translateX(0);}
+}
+.fnContainer {
+  padding: 14px 12px 0px 20px;
+  margin-bottom: 20px;
+  border-radius: ${colors.fnContainerBorderRadius};
+  border: ${colors.fnContainerBorder};
+  background-color: ${colors.fnContainerBackgroundColor};
+  box-shadow: ${colors.fnContainerBoxShadow};
+}
+.function {
+  position: relative;
+}
+.topContainer {
+  padding: 14px 12px 0px 20px;
+  margin-bottom: 20px;
+  border-radius: ${colors.topContainerBorderRadius};
+  border: ${colors.topContainerBorder};
+  background-color: ${colors.topContainerBackgroundColor};
+}
+.ctor {
+  display: grid;
+  grid-template-rows: auto;
+  grid-template-columns: auto;
+}
+.signature {
+  
+}
+.pure {
+  color: ${colors.yellow};
+}
+.view {
+}
+.nonpayable {
+}
+.payable {
+}
+.icon {
+  font-size: 2.6rem;
+}
+.output {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding-left: 10px;
+  align-self: center;
+}
+.valError {
+  color: ${colors.valErrorColor};
+  margin-right: 5px;
+}
+.valSuccess {
+  color: ${colors.valSuccessColor};
+}
+.inputContainer {
+  display: grid;
+  grid-template-columns: 100px auto;
+  grid-template-rows: auto;
+  margin-bottom: 15px;
+}
+.inputParam {
+  padding: ${colors.inputParamPadding};
+  color: ${colors.inputParamColor};
+  font-size: ${colors.inputParamFontSize};
+  text-align: ${colors.inputParamTextAlign};
+}
+.inputFields {
+  position: relative;
+  display: inline-grid;
+  grid-row-gap: 20px;
+  align-items: center;
+}
+.inputType {
+}
+.inputField {
+  font-family: 'Nunito', sans-serif;
+  font-size: ${colors.inputFieldFontSize};
+  color: ${colors.inputFieldColor};
+  background-color: ${colors.inputFieldBackgroundColor};
+  text-align: ${colors.inputFieldTextAlign};
+  padding: 6px 28px 6px 12px;
+  border-radius: ${colors.inputFieldBorderRadius};
+  border: ${colors.inputFieldBorder};
+}
+.inputField::placeholder {
+  color: ${colors.inputFieldPlaceholderColor};
+}
+.integerValue {
+  font-size: ${colors.integerValueFontSize};
+  color: ${colors.integerValueColor};
+  background-color: ${colors.integerValueBackgroundColor};
+  border-radius: ${colors.integerValueBorderRadius};
+  border: ${colors.integerValueBorder};
+  text-align: ${colors.integerValueTextAlign};
+  padding: 6px 30px 6px 12px;
+}
+.integerValue::placeholder {
+  color: ${colors.integerValuePlaceholderColor};
+}
+.integerSlider {
+  width: 100%;
+  background-color: ${colors.darkSmoke};
+  -webkit-appearance: none;
+  height: 1px;
+}
+.integerSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  border-radius: 0.2em;
+  height: 22px;
+  width: 10px;
+  background-color: ${colors.darkSmoke};
+  cursor: pointer;
+}
+.integerField {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto;
+  grid-column-gap: 5px;
+  align-items: center;
+}
+.booleanField {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto 30px;
+  grid-template-rows: auto;
+  grid-column-gap: 5px;
+  align-items: center;
+}
+.booleanField .columns {
+  display: inline-grid;
+  justify-content: center;
+  width: calc(100% - 20px);
+  font-size: ${colors.booleanFieldFontSize};
+  color: ${colors.booleanFieldColor};
+  background-color: ${colors.booleanFieldBackgroundColor};
+  padding: 6px 10px;
+  border-right: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.stringField, .byteField, .addressField {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-column-gap: 5px;
+}
+.keyField {
+  ${inputStyle()}
+  border-right: none;
+  background-color: ${colors.aquaMarine};
+  border-color: ${colors.whiteSmoke};
+}
+.false {
+}
+.true {
+}
+.arrayContainer {
+  display: grid;
+  grid-row-gap: 5px;
+}
+.arrayPlusMinus {
+  text-align: ${colors.arrayPlusMinusTextAlign};
+  font-size: ${colors.arrayPlusMinusFontSize};
+  color: ${colors.arrayPlusMinusColor};
+}
+.arrayPlus {
+  cursor: pointer;
+}
+.arrayMinus {
+  cursor: pointer;
+  margin-right: 15px;
+}
+.actions {
+  text-align: right;
+  padding-bottom: 14px;
+}
+.expend {
+  position: absolute;
+  right: 5px;
+  top: -5px;
+}
+.txReceipt {
+  display: grid;
+  grid-template: auto / 1fr;
+  grid-row-gap: 20px;
+}
+.txReturnTitle {
+  color: ${colors.txReturnTitleColor};
+  font-size: ${colors.txReturnTitleFontSize};
+}
+.txReturnValue {
+  color: ${colors.txReturnValueColor};
+  font-size: ${colors.txReturnValueFontSize};
+}
+.infoIcon {
+  text-align: right;
+}
+.infoIcon a {
+  font-size: 2.4rem;
+  color: #A0A0FF;
+}
+@media (max-width: 640px) {
+  .preview {
+    max-width: 100%;
   }
-  @media only screen and (max-device-width: 480px) {
-    html {
-      font-size: 30px;
-    }
-    .constructorFn, .functions {
-      width: 80%;
-    }
-    .title {
-      top: -30px;
-    }
-  }
+}
 `
 
 function inputStyle() {
   return `
-    border: 1px solid ${colors.slateGrey};
     background-color: ${colors.darkSmoke};
-    color: ${colors.slateGrey};
-    padding: 5px;
   `
 }
 
