@@ -20660,6 +20660,8 @@ const lightTheme = {
   txReturnTitleFontSize: '1.3rem',
   txReturnValueColor: dark,
   txReturnValueFontSize: '1.3rem',
+  integerSliderBackgroundColor: '#DCD7D6',
+  integerThumbBackgroundColor: '#00A2F9',
 }
 
 const darkTheme = {
@@ -20739,6 +20741,8 @@ const darkTheme = {
   txReturnTitleFontSize: '1.3rem',
   txReturnValueColor: white,
   txReturnValueFontSize: '1.3rem',
+  integerSliderBackgroundColor: '#DCD7D6',
+  integerThumbBackgroundColor: '#07FDFC',
 }
 
 const themes = { darkTheme, lightTheme }
@@ -20770,6 +20774,8 @@ var fonts = [ "https://use.fontawesome.com/releases/v5.8.2/css/all.css",
   'https://fonts.googleapis.com/css?family=Nunito&display=swap']
 var fontAwesome = bel`<link href=${fonts[0]} rel='stylesheet' type='text/css'>`
 var overpassMono = bel`<link href=${fonts[1]} rel='stylesheet' type='text/css'>`
+var viewPort = bel`<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">`
+document.head.appendChild(viewPort)
 document.head.appendChild(fontAwesome)
 document.head.appendChild(overpassMono)
 
@@ -21185,7 +21191,7 @@ button {
   background-color: #1D1D26;
 }
 .preview {
-  max-width: 480px;
+  max-width: 560px;
   margin: 0 auto;
   padding: 1% 2%;
 }
@@ -21425,23 +21431,27 @@ button {
 }
 .integerSlider {
   width: 100%;
-  background-color: ${colors.darkSmoke};
+  background-color: ${colors.integerSliderBackgroundColor};
   -webkit-appearance: none;
-  height: 1px;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  grid-row: 2;
 }
 .integerSlider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  border-radius: 0.2em;
-  height: 22px;
-  width: 10px;
-  background-color: ${colors.darkSmoke};
+  border-radius: 50%;
+  height: 16px;
+  width: 16px;
+  background-color: ${colors.integerThumbBackgroundColor};
+  box-shadow: 0 0 10px rgba(0, 0, 0, .3);
   cursor: pointer;
 }
 .integerField {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 40px;
   grid-column-gap: 5px;
   align-items: center;
 }
