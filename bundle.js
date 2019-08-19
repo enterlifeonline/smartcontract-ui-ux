@@ -21436,6 +21436,7 @@ button {
 .integerSlider {
   -webkit-appearance: none;
   background-color: transparent;
+  width: 100%;
   border-radius: 3px;
   grid-row: 2;
 }
@@ -21503,6 +21504,7 @@ button {
   background-color: ${colors.integerThumbBackgroundColor};
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(0, 0, 0, .3);
+  margin-top: -2px;
   cursor: pointer;
 }
 .integerSlider:focus {
@@ -21510,6 +21512,7 @@ button {
 }
 .integerSlider::-ms-trackcus {
   width: 100%;
+  border-radius: 3px;
   cursor: pointer;
   background: transparent;
   border-color: transparent;
