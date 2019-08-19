@@ -663,11 +663,13 @@ button {
   padding: 6px 28px 6px 12px;
   border-radius: ${colors.inputFieldBorderRadius};
   border: ${colors.inputFieldBorder};
+  width: calc(100% - 40px)
 }
 .inputField::placeholder {
   color: ${colors.inputFieldPlaceholderColor};
 }
 .integerValue {
+  width: calc(100% - 42px);
   font-size: ${colors.integerValueFontSize};
   color: ${colors.integerValueColor};
   background-color: ${colors.integerValueBackgroundColor};
@@ -680,22 +682,86 @@ button {
   color: ${colors.integerValuePlaceholderColor};
 }
 .integerSlider {
-  width: 100%;
-  background-color: ${colors.integerSliderBackgroundColor};
   -webkit-appearance: none;
-  height: 6px;
+  background-color: transparent;
   border-radius: 3px;
-  outline: none;
   grid-row: 2;
 }
+/* track */
+.integerSlider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background-color: ${colors.integerSliderBackgroundColor};
+  border-radius: 3px;
+  grid-row: 2;
+}
+.integerSlider:active::-webkit-slider-runnable-track {
+  background-color: ${colors.integerSliderFocusBackgroundColor};
+}
+.integerSlider::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  background-color: ${colors.integerSliderBackgroundColor};
+  border-radius: 3px;
+  cursor: pointer;
+}
+.integerSlider::-ms-track {
+  width: 100%;
+  height: 6px;
+  background-color: ${colors.transparent};
+  color: ${colors.transparent};
+  border-color: ${colors.transparent};
+  border-radius: 3px;
+  cursor: pointer;
+}
+.integerSlider::-ms-fill-lower {
+  background-color: ${colors.integerSliderBackgroundColor};
+}
+.integerSlider:focus::-ms-fill-lower {
+  background-color: ${colors.integerSliderFocusBackgroundColor};
+}
+.integerSlider::-ms-fill-upper {
+  background-color: ${colors.integerSliderBackgroundColor};
+}
+.integerSlider:focus::-ms-fill-upper {
+  background-color: ${colors.integerSliderFocusBackgroundColor};
+}
+/* thumb */
 .integerSlider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  border-radius: 50%;
-  height: 16px;
   width: 16px;
+  height: 16px;
   background-color: ${colors.integerThumbBackgroundColor};
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, .3);
+  margin-top: -6px;
+  cursor: pointer;
+}
+.integerSlider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background-color: ${colors.integerThumbBackgroundColor};
+  border-radius: 50%;
   box-shadow: 0 0 10px rgba(0, 0, 0, .3);
   cursor: pointer;
+}
+.integerSlider::-ms-range-thumb {
+  width: 16px;
+  height: 16px;
+  background-color: ${colors.integerThumbBackgroundColor};
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, .3);
+  cursor: pointer;
+}
+.integerSlider:focus {
+  outline: none;
+}
+.integerSlider::-ms-trackcus {
+  width: 100%;
+  cursor: pointer;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
 }
 .integerField {
   position: relative;
