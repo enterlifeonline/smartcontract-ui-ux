@@ -20347,31 +20347,32 @@ module.exports = loadingAnimation
 
 function loadingAnimation (colors) {
   const css = csjs`
+  .loader {
+    display: inline-block;
+  }
   .loader:before {
     content: "";
-    position: absolute;
+    display: inline-block;
     width: 4px;
     height: 4px;
-    top: 45%;
-    left: 78%;
     background-color: ${colors.loaderBackgroundColor};
-    animation: rotatemove 1.5s infinite;
+    animation: rotatemove 2s infinite;
     border-radius: 50%;
   }
 
   @keyframes rotatemove {
     0%{
-      -webkit-transform: scale(1) translateX(0px);
-      -ms-transform: scale(1) translateX(0px);
-      -o-transform: scale(1) translateX(0px);
-      transform: scale(1) translateX(0px);
+      -webkit-transform: scale(1) translateX(0);
+      -ms-transform: scale(1) translateX(0);
+      -o-transform: scale(1) translateX(0);
+      transform: scale(1) translateX(0);
     }
 
     100%{
-      -webkit-transform: scale(2) translateX(45px);
-      -ms-transform: scale(2) translateX(45px);
-      -o-transform: scale(2) translateX(45px);
-      transform: scale(2) translateX(45px);
+      -webkit-transform: scale(2) translateX(9rem);
+      -ms-transform: scale(2) translateX(9rem);
+      -o-transform: scale(2) translateX(9rem);
+      transform: scale(2) translateX(9rem);
     }
   }`
   // @TODO: fix theming to not create 10000 style tags for 1000 spinners
@@ -20987,6 +20988,8 @@ function displayContractUI(result) {   // compilation result metadata
             </div>
           </div>
         </div>
+        <div class="${css.txReturnItem}"><div class="${css.txReceipt}"><div class="${css.txReturnField}"><div class="${css.txReturnValue}">"20"</div></div></div></div>
+        <div class=${css.txReturnItem}>Awaiting network confirmation ${loadingAnimation(colors)}</div>
       </div>`
       if (label === 'payable')  send.parentNode.insertAdjacentElement('beforeBegin', inputPayable(label))
       return el
@@ -21125,6 +21128,7 @@ function displayContractUI(result) {   // compilation result metadata
 
     var topContainer = bel`<section class=${css.topContainer}></section>`
     var ctor = bel`<div class="${css.ctor}">
+      <div class=${css.deploying}>Publishing to Ethereum network ${loadingAnimation(colors)}</div>
       ${metadata.constructorInput}
       <div class=${css.actions}>
         <button class="${css.button} ${css.deploy}" onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
@@ -21225,10 +21229,14 @@ button {
 .txReturn {
 }
 .deploying {
-  font-size: 1.8rem;
-  margin-left: 3%;
+  display: grid;
+  grid-template: auto / auto 1fr;
+  font-size: 1.4rem;
+  padding: 10px 14px 20px 14px;
 }
 .txReturnItem {
+  margin: 1px -12px 0 -20px;
+  padding: 20px 14px 20px 20px;
   font-size: ${colors.txReturnItemFontSize};
   color: ${colors.txReturnItemColor};
   background-color: ${colors.txReturnItemBackgroundColor}
@@ -21342,6 +21350,11 @@ button {
   background-color: ${colors.fnContainerBackgroundColor};
   box-shadow: ${colors.fnContainerBoxShadow};
 }
+.fnContainer .deploying {
+  padding: 20px 14px 20px 20px;
+  margin:1px -12px 0 -20px;
+  background-color: rgba(128,134,186, .6);
+}
 .function {
   position: relative;
 }
@@ -21437,6 +21450,7 @@ button {
   -webkit-appearance: none;
   background-color: transparent;
   width: 100%;
+  max-width: 100%;  
   border-radius: 3px;
   grid-row: 2;
 }
@@ -21458,26 +21472,28 @@ button {
   border-radius: 3px;
   cursor: pointer;
 }
-.integerSlider::-ms-track {
+input[type="range"]::-ms-track {
   width: 100%;
   height: 6px;
-  background-color: ${colors.transparent};
-  color: ${colors.transparent};
-  border-color: ${colors.transparent};
-  border-radius: 3px;
   cursor: pointer;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
 }
-.integerSlider::-ms-fill-lower {
-  background-color: ${colors.integerSliderBackgroundColor};
+input[type="range"]::-ms-fill-lower {
+  background: ${colors.integerSliderBackgroundColor};
 }
-.integerSlider:focus::-ms-fill-lower {
-  background-color: ${colors.integerSliderFocusBackgroundColor};
+
+input[type="range"]:focus::-ms-fill-lower {
+  background: ${colors.integerSliderFocusBackgroundColor};
 }
-.integerSlider::-ms-fill-upper {
-  background-color: ${colors.integerSliderBackgroundColor};
+
+input[type="range"]::-ms-fill-upper {
+  background: ${colors.integerSliderBackgroundColor};
 }
-.integerSlider:focus::-ms-fill-upper {
-  background-color: ${colors.integerSliderFocusBackgroundColor};
+
+input[type="range"]:focus::-ms-fill-upper {
+  background: #ddd;
 }
 /* thumb */
 .integerSlider::-webkit-slider-thumb {
@@ -21510,7 +21526,7 @@ button {
 .integerSlider:focus {
   outline: none;
 }
-.integerSlider::-ms-trackcus {
+.integerSlider::-ms-track {
   width: 100%;
   border-radius: 3px;
   cursor: pointer;
@@ -21520,6 +21536,7 @@ button {
 }
 .integerField {
   position: relative;
+  width: 100%;
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: auto 40px;
@@ -21592,6 +21609,9 @@ button {
   grid-template: auto / 1fr;
   grid-row-gap: 20px;
 }
+.txReturnField {
+
+}
 .txReturnTitle {
   color: ${colors.txReturnTitleColor};
   font-size: ${colors.txReturnTitleFontSize};
@@ -21599,6 +21619,7 @@ button {
 .txReturnValue {
   color: ${colors.txReturnValueColor};
   font-size: ${colors.txReturnValueFontSize};
+  text-align: center;
 }
 .infoIcon {
   text-align: right;
