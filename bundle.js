@@ -11759,8 +11759,8 @@ const validator = require('solidity-validator')
 module.exports = displayBooleanInput
 
 function displayBooleanInput ({ theme: { classes: css, colors }, type, cb }) {
-  const boolFalse = bel `<span class="${css.columns} ${css.false}" data-state="" data-type="boolean" value="false" onclick=${toggle}>false</span>`
-  const boolTrue = bel `<span class="${css.columns} ${css.true}" data-state="" data-type="boolean" value="true" onclick=${toggle}>true</span>`
+  const boolFalse = bel `<div class="${css.columns} ${css.false}" data-state="" data-type="boolean" value="false" onclick=${toggle}>false</div>`
+  const boolTrue = bel `<div class="${css.columns} ${css.true}" data-state="" data-type="boolean" value="true" onclick=${toggle}>true</div>`
   const input = bel`<div class=${css.booleanField}>
     ${boolFalse}
     ${boolTrue}
@@ -11771,19 +11771,19 @@ function displayBooleanInput ({ theme: { classes: css, colors }, type, cb }) {
     let value = e.target.innerHTML
     cb(validator.getMessage('boolean', value), e.target, value)
     if (value === 'true') {
-      boolFalse.style.color = colors.slateGrey
-      boolFalse.style.backgroundColor = colors.darkSmoke
+      boolFalse.style.color = colors.booleanFieldColor
+      boolFalse.style.backgroundColor = colors.booleanFieldBackgroundColor
       boolFalse.dataset.state = ""
       boolTrue.dataset.state = "active"
-      boolTrue.style.color = colors.dark
-      boolTrue.style.backgroundColor = colors.aquaMarine
+      boolTrue.style.color = colors.booleanFieldActiveColor
+      boolTrue.style.backgroundColor = colors.booleanFieldTruedBackgroundColor
     } else if (value === 'false') {
-      boolTrue.style.color = colors.slateGrey
-      boolTrue.style.backgroundColor = colors.darkSmoke
+      boolTrue.style.color = colors.booleanFieldColor
+      boolTrue.style.backgroundColor = colors.booleanFieldBackgroundColor
       boolTrue.dataset.state = ""
       boolFalse.dataset.state = "active"
-      boolFalse.style.color = colors.dark
-      boolFalse.style.backgroundColor = colors.violetRed
+      boolFalse.style.color = colors.booleanFieldActiveColor
+      boolFalse.style.backgroundColor = colors.booleanFieldFalsedBackgroundColor
     }
   }
 
@@ -20343,7 +20343,7 @@ css = csjs`
 const bel = require("bel")
 const csjs = require("csjs-inject")
 
-module.exports = loadingAnimation
+module.exports = loadingAnimation 
 
 function loadingAnimation (colors) {
   const css = csjs`
@@ -20643,8 +20643,11 @@ const lightTheme = {
   currencyBorder: `1px solid ${greyCC}`,
   currencyBorderRadius: '2px',
   booleanFieldColor: dark,
+  booleanFieldActiveColor: dark,
   booleanFieldBackgroundColor: greyEB,
   booleanFieldFontSize: '1.4rem',
+  booleanFieldTruedBackgroundColor: '#8EF9F6',
+  booleanFieldFalsedBackgroundColor: violetRed,
   valSuccessColor: androidGreen,
   sendColor: '#A0A0FF',
   sendBackgroundColor: transparent,
@@ -20725,8 +20728,11 @@ const darkTheme = {
   currencyBorder: 'none',
   currencyBorderRadius: '2px',
   booleanFieldColor: white,
+  booleanFieldActiveColor: dark,
   booleanFieldBackgroundColor: dark,
   booleanFieldFontSize: '1.4rem',
+  booleanFieldTruedBackgroundColor: '#8EF9F6',
+  booleanFieldFalsedBackgroundColor: violetRed,
   valSuccessColor: aquaMarine,
   sendColor: '#DCD7D6',
   sendBackgroundColor: transparent,
@@ -21562,6 +21568,14 @@ input[type="range"]:focus::-ms-fill-upper {
   border-right: none;
   border-radius: 2px;
   cursor: pointer;
+}
+.booleanField .true[data-state='active'] {
+  color: ${colors.booleanFieldActiveColor};
+  background-color: ${colors.booleanFieldTruedBackgroundColor};
+}
+.booleanField .false[data-state='active'] {
+  color: ${colors.booleanFieldActiveColor};
+  background-color: ${colors.booleanFieldFalsedBackgroundColor};
 }
 .stringField, .byteField, .addressField {
   position: relative;
