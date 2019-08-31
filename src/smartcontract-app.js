@@ -810,6 +810,14 @@ input[type="range"]:focus::-ms-fill-upper {
   border-radius: 2px;
   cursor: pointer;
 }
+.booleanField .true[data-state='active'] {
+  color: ${colors.booleanFieldActiveColor};
+  background-color: ${colors.booleanFieldTruedBackgroundColor};
+}
+.booleanField .false[data-state='active'] {
+  color: ${colors.booleanFieldActiveColor};
+  background-color: ${colors.booleanFieldFalsedBackgroundColor};
+}
 .stringField, .byteField, .addressField {
   position: relative;
   display: grid;
