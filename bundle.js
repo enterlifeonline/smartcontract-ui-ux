@@ -40,7 +40,7 @@ function printError (e) {
 }
 const sourcecode = require('./sampleContracts/BlindAuction.sol')
 
-},{"../":146,"./sampleContracts/BlindAuction.sol":2,"solc-js":82}],2:[function(require,module,exports){
+},{"../":146,"./sampleContracts/BlindAuction.sol":2,"solc-js":83}],2:[function(require,module,exports){
 module.exports = `
 pragma solidity >0.4.23 <0.7.0;
 
@@ -269,7 +269,7 @@ function setCacheTime(caching, url) {
     window.localStorage[url] = timestamp;
   }
 }
-},{"kv-idb":57}],4:[function(require,module,exports){
+},{"kv-idb":58}],4:[function(require,module,exports){
 module.exports = {
   promiseAjax: require('./promiseAjax')
 };
@@ -6930,7 +6930,7 @@ function csjsInserter() {
 module.exports = csjsInserter;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"csjs":17,"insert-css":55}],13:[function(require,module,exports){
+},{"csjs":17,"insert-css":56}],13:[function(require,module,exports){
 'use strict';
 
 module.exports = require('csjs/get-css');
@@ -7922,7 +7922,7 @@ module.exports = {
   fromWei: fromWei,
   toWei: toWei
 };
-},{"bn.js":34,"number-to-bn":59}],34:[function(require,module,exports){
+},{"bn.js":34,"number-to-bn":60}],34:[function(require,module,exports){
 (function (module, exports) {
   'use strict';
 
@@ -11687,7 +11687,7 @@ function displayAddressInput ({ theme: { classes: css }, cb }) {
   }
 }
 
-},{"bel":7,"csjs-inject":14,"solidity-validator":118}],38:[function(require,module,exports){
+},{"bel":7,"csjs-inject":14,"solidity-validator":119}],38:[function(require,module,exports){
 const bel = require('bel')
 const csjs = require('csjs-inject')
 const inputAddress = require("input-address")
@@ -11751,7 +11751,7 @@ function getParsedArray (type) {
   return arr.reverse()
 }
 
-},{"bel":7,"csjs-inject":14,"input-address":37,"input-boolean":39,"input-byte":52,"input-integer":53,"input-string":54,"solidity-validator":118}],39:[function(require,module,exports){
+},{"bel":7,"csjs-inject":14,"input-address":37,"input-boolean":39,"input-byte":52,"input-integer":53,"input-string":55,"solidity-validator":119}],39:[function(require,module,exports){
 const bel = require('bel')
 const csjs = require('csjs-inject')
 const validator = require('solidity-validator')
@@ -11789,7 +11789,7 @@ function displayBooleanInput ({ theme: { classes: css, colors }, type, cb }) {
 
 }
 
-},{"bel":7,"csjs-inject":14,"solidity-validator":118}],40:[function(require,module,exports){
+},{"bel":7,"csjs-inject":14,"solidity-validator":119}],40:[function(require,module,exports){
 ;(function (globalObject) {
   'use strict';
 
@@ -14802,7 +14802,7 @@ function isAddress(str) {
   return Web3Utils.isAddress(str)
 }
 
-},{"./util/assertString":51,"web3-utils":130}],45:[function(require,module,exports){
+},{"./util/assertString":51,"web3-utils":131}],45:[function(require,module,exports){
 const assertString = require('./util/assertString')
 
 module.exports = isBoolean
@@ -14987,7 +14987,49 @@ function displayIntegerInput ({ theme: { classes: css }, type, cb }) {
   }
 }
 
-},{"bel":7,"bignumber.js":8,"csjs-inject":14,"solidity-validator":118}],54:[function(require,module,exports){
+},{"bel":7,"bignumber.js":8,"csjs-inject":14,"solidity-validator":119}],54:[function(require,module,exports){
+const bel = require("bel")
+
+module.exports = inputPayable
+
+function inputPayable ({ theme: { classes: css }, label }) {
+
+  const input = bel`
+    <div class=${css.inputContainer}>
+      <label class=${css.inputParam} title="data type: ${label}">value</label>
+      <div class=${css.inputArea}>
+        <input class=${css.inputField} type="number" placeholder="999" oninput=${validate}>
+        ${currencySelector(css)}
+        <div class=${css.ethIcon} title="Select amount you want to send with this function!"><i class="fab fa-ethereum"></i></div>
+      </div>
+    </div>`
+
+  return input
+  function validate (e) {
+    // @TODO
+  }
+
+  function currencySelector (css) {
+    var button = bel`
+      <select class=${css.currency}>
+        <option value="wei">wei</option>
+        <option value="k-wei">k-wei</option>
+        <option value="m-wei">m-wei</option>
+        <option value="g-wei">g-wei</option>
+        <option value="micro">micro</option>
+        <option value="milli">milli</option>
+        <option value="ether">ether</option>
+        <option value="k-ether">k-ether</option>
+        <option value="m-ether">m-ether</option>
+        <option value="g-ether">g-ether</option>
+        <option value="t-ether">t-ether</option>
+      </select>`
+    return button
+  }
+}
+
+
+},{"bel":7}],55:[function(require,module,exports){
 const bel = require('bel')
 const csjs = require('csjs-inject')
 const validator = require('solidity-validator')
@@ -15005,7 +15047,7 @@ function displayStringInput ({ theme: { classes: css }, cb }) {
   }
 }
 
-},{"bel":7,"csjs-inject":14,"solidity-validator":118}],55:[function(require,module,exports){
+},{"bel":7,"csjs-inject":14,"solidity-validator":119}],56:[function(require,module,exports){
 var inserted = {};
 
 module.exports = function (css, options) {
@@ -15029,7 +15071,7 @@ module.exports = function (css, options) {
     }
 };
 
-},{}],56:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 /**
  * Returns a `Boolean` on whether or not the a `String` starts with '0x'
  * @param {String} str the string input value
@@ -15044,7 +15086,7 @@ module.exports = function isHexPrefixed(str) {
   return str.slice(0, 2) === '0x';
 }
 
-},{}],57:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 const indexedDB = window.indexedDB
 const console = window.console
 
@@ -15128,9 +15170,9 @@ function kvidb (opts) {
   return api
 }
 
-},{}],58:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 arguments[4][34][0].apply(exports,arguments)
-},{"dup":34}],59:[function(require,module,exports){
+},{"dup":34}],60:[function(require,module,exports){
 var BN = require('bn.js');
 var stripHexPrefix = require('strip-hex-prefix');
 
@@ -15170,11 +15212,11 @@ module.exports = function numberToBN(arg) {
   throw new Error('[number-to-bn] while converting number ' + JSON.stringify(arg) + ' to BN.js instance, error: invalid number value. Value must be an integer, hex string, BN or BigNumber instance. Note, decimals are not supported.');
 }
 
-},{"bn.js":58,"strip-hex-prefix":127}],60:[function(require,module,exports){
+},{"bn.js":59,"strip-hex-prefix":128}],61:[function(require,module,exports){
 module.exports = window.crypto;
-},{}],61:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 module.exports = require('crypto');
-},{"crypto":60}],62:[function(require,module,exports){
+},{"crypto":61}],63:[function(require,module,exports){
 var randomHex = function(size, callback) {
     var crypto = require('./crypto.js');
     var isCallback = (typeof callback === 'function');
@@ -15240,14 +15282,14 @@ var randomHex = function(size, callback) {
 
 module.exports = randomHex;
 
-},{"./crypto.js":61}],63:[function(require,module,exports){
+},{"./crypto.js":62}],64:[function(require,module,exports){
 module.exports = {
   type: 'github',
   parser: require('./parser'),
   resolver: require('./resolver'),
   match: /^(https?:\/\/)?(www.)?github.com\/([^/]*\/[^/]*)\/(.*)/
 };
-},{"./parser":64,"./resolver":65}],64:[function(require,module,exports){
+},{"./parser":65,"./resolver":66}],65:[function(require,module,exports){
 const replaceContent = require('solc-import').replaceContent
 const resolver = require('./resolver')
 // https://github.com/<owner>/<repo>/<path_to_the_file>
@@ -15303,7 +15345,7 @@ function isSymbolicLink(data) {
 //   }
 // }
 
-},{"./index":63,"./resolver":65,"solc-import":78}],65:[function(require,module,exports){
+},{"./index":64,"./resolver":66,"solc-import":79}],66:[function(require,module,exports){
 module.exports = function (content, from, subImportPath) {
   let newContent = content;
   let url = new window.URL(subImportPath, from);
@@ -15312,7 +15354,7 @@ module.exports = function (content, from, subImportPath) {
   newContent = newContent.replace(`import "${subImportPath}"`, `import "${fixedPath}"`);
   return newContent;
 };
-},{}],66:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 module.exports = {
   type: 'http',
   parser: require('./parser'),
@@ -15321,7 +15363,7 @@ module.exports = {
 };
 
 // const match = /^(http?:\/\/?(.*))$/;
-},{"./parser":67,"./resolver":68}],67:[function(require,module,exports){
+},{"./parser":68,"./resolver":69}],68:[function(require,module,exports){
 const replaceContent = require('solc-import').replaceContent;
 const resolver = require('./resolver');
 
@@ -15337,16 +15379,16 @@ module.exports = async function (importPath) {
     throw error;
   }
 };
-},{"./index":66,"./resolver":68,"solc-import":78}],68:[function(require,module,exports){
-arguments[4][65][0].apply(exports,arguments)
-},{"dup":65}],69:[function(require,module,exports){
+},{"./index":67,"./resolver":69,"solc-import":79}],69:[function(require,module,exports){
+arguments[4][66][0].apply(exports,arguments)
+},{"dup":66}],70:[function(require,module,exports){
 module.exports = {
   type: 'ipfs',
   parser: require('./parser'),
   resolver: require('./resolver'),
   match: /^(ipfs:\/\/?.+)/
 };
-},{"./parser":70,"./resolver":71}],70:[function(require,module,exports){
+},{"./parser":71,"./resolver":72}],71:[function(require,module,exports){
 module.exports = async function (importPath) {
   let [, url] = require('./index').match.exec(importPath);
   // replace ipfs:// with /ipfs/
@@ -15362,16 +15404,16 @@ module.exports = async function (importPath) {
     throw error;
   }
 };
-},{"./index":69}],71:[function(require,module,exports){
-arguments[4][65][0].apply(exports,arguments)
-},{"dup":65}],72:[function(require,module,exports){
+},{"./index":70}],72:[function(require,module,exports){
+arguments[4][66][0].apply(exports,arguments)
+},{"dup":66}],73:[function(require,module,exports){
 module.exports = {
   type: 'swarm',
   parser: require('./parser'),
   resolver: require('./resolver'),
   match: /^(bzz[ri]?:\/\/?(.*))$/
 };
-},{"./parser":73,"./resolver":74}],73:[function(require,module,exports){
+},{"./parser":74,"./resolver":75}],74:[function(require,module,exports){
 module.exports = async function (importPath) {
   const [, url,] = require('./index').match.exec(importPath);
   try {
@@ -15414,9 +15456,9 @@ function swarmgwMaker(opts) {
   };
 }
 
-},{"./index":72}],74:[function(require,module,exports){
-arguments[4][65][0].apply(exports,arguments)
-},{"dup":65}],75:[function(require,module,exports){
+},{"./index":73}],75:[function(require,module,exports){
+arguments[4][66][0].apply(exports,arguments)
+},{"dup":66}],76:[function(require,module,exports){
 const getImports = require('./getImports');
 const isExistImport = require('./isExistImport');
 
@@ -15467,7 +15509,7 @@ async function getMergeSubImportMap(allSubImportPath, sourceMap, getImportConten
   }
   return sourceMap;
 }
-},{"./getImports":76,"./isExistImport":79}],76:[function(require,module,exports){
+},{"./getImports":77,"./isExistImport":80}],77:[function(require,module,exports){
 module.exports = getImports;
 
 function getImports(source) {
@@ -15479,7 +15521,7 @@ function getImports(source) {
   }
   return matches;
 }
-},{}],77:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 const combineSource = require('./combineSource');
 
 module.exports = getReadCallback;
@@ -15497,7 +15539,7 @@ async function getReadCallback(sourceCode, getImportContent) {
   }
   return readCallback;
 }
-},{"./combineSource":75}],78:[function(require,module,exports){
+},{"./combineSource":76}],79:[function(require,module,exports){
 module.exports = {
   combineSource: require('./combineSource'),
   getImports: require('./getImports'),
@@ -15505,7 +15547,7 @@ module.exports = {
   isExistImport: require('./isExistImport'),
   replaceContent: require('./replaceContent')
 };
-},{"./combineSource":75,"./getImports":76,"./getReadCallback":77,"./isExistImport":79,"./replaceContent":80}],79:[function(require,module,exports){
+},{"./combineSource":76,"./getImports":77,"./getReadCallback":78,"./isExistImport":80,"./replaceContent":81}],80:[function(require,module,exports){
 const getImports = require('./getImports');
 
 module.exports = isExistImport;
@@ -15514,7 +15556,7 @@ function isExistImport(sourcecode) {
   const allImportPath = getImports(sourcecode);
   return allImportPath.length != 0;
 }
-},{"./getImports":76}],80:[function(require,module,exports){
+},{"./getImports":77}],81:[function(require,module,exports){
 const getImports = require('./getImports');
 const isExistImport = require('./isExistImport');
 
@@ -15536,7 +15578,7 @@ function replaceContent(content, from, resolver) {
 function isExplicitlyRelative(importPath) {
   return importPath.indexOf('.') === 0;
 }
-},{"./getImports":76,"./isExistImport":79}],81:[function(require,module,exports){
+},{"./getImports":77,"./isExistImport":80}],82:[function(require,module,exports){
 const solcImport = require('solc-import');
 const solcResolver = require('solc-resolver');
 const solcjsCore = require('solcjs-core');
@@ -15590,7 +15632,7 @@ function getContent() {
   return getImportContent;
 }
 
-},{"resolve-github":63,"resolve-http":66,"resolve-ipfs":69,"resolve-swarm":72,"solc-import":78,"solc-resolver":84,"solcjs-core":104}],82:[function(require,module,exports){
+},{"resolve-github":64,"resolve-http":67,"resolve-ipfs":70,"resolve-swarm":73,"solc-import":79,"solc-resolver":85,"solcjs-core":105}],83:[function(require,module,exports){
 
 let solcjs = require('./solc');
 const solcVersion = require('solc-version');
@@ -15600,7 +15642,7 @@ module.exports = solcjs;
 solcjs.versions = solcVersion.versions;
 solcjs.versionsSkipVersion5 = solcVersion.versionsSkipVersion5;
 solcjs.version2url = solcVersion.version2url;
-},{"./solc":83,"solc-version":88}],83:[function(require,module,exports){
+},{"./solc":84,"solc-version":89}],84:[function(require,module,exports){
 const solcVersion = require('solc-version');
 const getCompile = require('./getCompile');
 const solcjsCore = require('solcjs-core');
@@ -15643,11 +15685,11 @@ function solcjs(_version) {
 }
 
 module.exports = solcjs;
-},{"./getCompile":81,"solc-version":88,"solcjs-core":104}],84:[function(require,module,exports){
+},{"./getCompile":82,"solc-version":89,"solcjs-core":105}],85:[function(require,module,exports){
 module.exports = {
   resolverEngine: require('./resolverEngine')
 };
-},{"./resolverEngine":85}],85:[function(require,module,exports){
+},{"./resolverEngine":86}],86:[function(require,module,exports){
 module.exports = class ResolverEngine {
   constructor() {
     this.resolvers = [];
@@ -15720,7 +15762,7 @@ module.exports = class ResolverEngine {
     return !found;
   }
 };
-},{}],86:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 const baseURL = 'https://solc-bin.ethereum.org/bin';
 
 const ajaxCaching = require('ajax-caching');
@@ -15743,7 +15785,7 @@ async function getlist() {
     throw error;
   }
 }
-},{"ajax-caching":4}],87:[function(require,module,exports){
+},{"ajax-caching":4}],88:[function(require,module,exports){
 module.exports = groupByVersion;
 
 function removeAllZeroPointFiveVersion(select) {
@@ -15761,13 +15803,13 @@ function groupByVersion(data, skip5 = true) {
   if (skip5) removeAllZeroPointFiveVersion(select);
   return select;
 }
-},{}],88:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 module.exports = {
   version2url: require('./version2url'),
   versions: require('./versions'),
   versionsSkipVersion5: require('./versionsSkipVersion5')
 };
-},{"./version2url":90,"./versions":91,"./versionsSkipVersion5":92}],89:[function(require,module,exports){
+},{"./version2url":91,"./versions":92,"./versionsSkipVersion5":93}],90:[function(require,module,exports){
 module.exports = processList;
 
 function processList(json) {
@@ -15819,7 +15861,7 @@ function processList(json) {
   lists.all = all.reduce((o, x) => ((o[x[0]] = x[1]), o), {});
   return lists;
 }
-},{}],90:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 const baseURL = 'https://solc-bin.ethereum.org/bin';
 
 const processList = require('./processList');
@@ -15843,7 +15885,7 @@ function version2url(version, list) {
     }
   });
 }
-},{"./getlist":86,"./processList":89}],91:[function(require,module,exports){
+},{"./getlist":87,"./processList":90}],92:[function(require,module,exports){
 const processList = require('./processList');
 const getlist = require('./getlist');
 const groupByVersion = require('./groupByVersion');
@@ -15861,7 +15903,7 @@ function versions(list) {
     }
   });
 }
-},{"./getlist":86,"./groupByVersion":87,"./processList":89}],92:[function(require,module,exports){
+},{"./getlist":87,"./groupByVersion":88,"./processList":90}],93:[function(require,module,exports){
 const processList = require('./processList');
 const getlist = require('./getlist');
 const groupByVersion = require('./groupByVersion');
@@ -15879,22 +15921,22 @@ function versionsSkipVersion5() {
     }
   });
 }
-},{"./getlist":86,"./groupByVersion":87,"./processList":89}],93:[function(require,module,exports){
-arguments[4][75][0].apply(exports,arguments)
-},{"./getImports":94,"./isExistImport":97,"dup":75}],94:[function(require,module,exports){
+},{"./getlist":87,"./groupByVersion":88,"./processList":90}],94:[function(require,module,exports){
 arguments[4][76][0].apply(exports,arguments)
-},{"dup":76}],95:[function(require,module,exports){
+},{"./getImports":95,"./isExistImport":98,"dup":76}],95:[function(require,module,exports){
 arguments[4][77][0].apply(exports,arguments)
-},{"./combineSource":93,"dup":77}],96:[function(require,module,exports){
+},{"dup":77}],96:[function(require,module,exports){
+arguments[4][78][0].apply(exports,arguments)
+},{"./combineSource":94,"dup":78}],97:[function(require,module,exports){
 module.exports = {
   combineSource: require('./combineSource'),
   getImports: require('./getImports'),
   getReadCallback: require('./getReadCallback'),
   isExistImport: require('./isExistImport')
 };
-},{"./combineSource":93,"./getImports":94,"./getReadCallback":95,"./isExistImport":97}],97:[function(require,module,exports){
-arguments[4][79][0].apply(exports,arguments)
-},{"./getImports":94,"dup":79}],98:[function(require,module,exports){
+},{"./combineSource":94,"./getImports":95,"./getReadCallback":96,"./isExistImport":98}],98:[function(require,module,exports){
+arguments[4][80][0].apply(exports,arguments)
+},{"./getImports":95,"dup":80}],99:[function(require,module,exports){
 const solcImport = require('solc-import');
 const getReadCallback = require('./getReadCallback');
 const wrapperCompile = require('./wrapperCompile');
@@ -15921,7 +15963,7 @@ function getCompile(oldSolc) {
   return compile;
 }
 
-},{"./getReadCallback":101,"./wrapperCompile":116,"solc-import":96}],99:[function(require,module,exports){
+},{"./getReadCallback":102,"./wrapperCompile":117,"solc-import":97}],100:[function(require,module,exports){
 const solcImport = require('solc-import');
 
 module.exports = getCompileOutput;
@@ -15936,7 +15978,7 @@ function getCompileOutput(oldSolc, sourcecode, readCallback) {
   }
   return output;
 }
-},{"solc-import":96}],100:[function(require,module,exports){
+},{"solc-import":97}],101:[function(require,module,exports){
 const ajaxCaching = require('ajax-caching');
 const promiseAjax = ajaxCaching.promiseAjax;
 
@@ -15959,7 +16001,7 @@ async function getCompilersource(compilerURL) {
     throw error;
   }
 }
-},{"ajax-caching":4}],101:[function(require,module,exports){
+},{"ajax-caching":4}],102:[function(require,module,exports){
 const solcImport = require('solc-import');
 
 module.exports = getReadCallback;
@@ -15968,7 +16010,7 @@ async function getReadCallback(sourcecode, getImportContent) {
   if (!solcImport.isExistImport(sourcecode)) return;
   return await solcImport.getReadCallback(sourcecode, getImportContent);
 }
-},{"solc-import":96}],102:[function(require,module,exports){
+},{"solc-import":97}],103:[function(require,module,exports){
 module.exports = getStandardError;
 
 function getStandardError(errors) {
@@ -15983,7 +16025,7 @@ function getStandardError(errors) {
   }
   return result;
 }
-},{}],103:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
 const solcVersion = require('solc-version');
 
 module.exports = getVersion;
@@ -16000,7 +16042,7 @@ async function getVersion(_version) {
   }
   return select.releases[0];
 }
-},{"solc-version":88}],104:[function(require,module,exports){
+},{"solc-version":89}],105:[function(require,module,exports){
 module.exports = {
   getCompilersource: require('./getCompilersource'),
   getReadCallback: require('./getReadCallback'),
@@ -16012,7 +16054,7 @@ module.exports = {
   solc: require('./solc'),
   solcWrapper: require('./solc-wrapper')
 };
-},{"./getCompile":98,"./getCompilersource":100,"./getReadCallback":101,"./getVersion":103,"./loadModule":105,"./pretest":106,"./solc":115,"./solc-wrapper":108,"./wrapperCompile":116}],105:[function(require,module,exports){
+},{"./getCompile":99,"./getCompilersource":101,"./getReadCallback":102,"./getVersion":104,"./loadModule":106,"./pretest":107,"./solc":116,"./solc-wrapper":109,"./wrapperCompile":117}],106:[function(require,module,exports){
 module.exports = loadModule;
 
 // HELPER
@@ -16051,7 +16093,7 @@ function loadModule(sourcecode) {
 //   }
 //   return compiler;
 // }
-},{}],106:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 module.exports = pretest;
 
 async function pretest(compile) {
@@ -16066,7 +16108,7 @@ async function pretest(compile) {
     throw error;
   }
 }
-},{}],107:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 // from: sindresorhus/semver-regex
 var semverRegex = /\bv?(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[\da-z-]+(?:\.[\da-z-]+)*)?(?:\+[\da-z-]+(?:\.[\da-z-]+)*)?\b/ig;
 
@@ -16155,14 +16197,14 @@ module.exports = {
   update: update
 };
 
-},{}],108:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 module.exports = {
   linker: require('./linker'),
   wrapper: require('./wrapper'),
   abi: require('./abi'),
   translate: require('./translate')
 };
-},{"./abi":107,"./linker":109,"./translate":110,"./wrapper":114}],109:[function(require,module,exports){
+},{"./abi":108,"./linker":110,"./translate":111,"./wrapper":115}],110:[function(require,module,exports){
 module.exports = { linkBytecode, findLinkReferences };
 
 function linkBytecode (bytecode, libraries) {
@@ -16229,13 +16271,13 @@ function findLinkReferences (bytecode) {
   return linkReferences;
 }
 
-},{}],110:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 module.exports = {
   standardTranslateJsonCompilerOutput: require('./standardTranslateJsonCompilerOutput'),
   prettyPrintLegacyAssemblyJSON: require('./prettyPrintLegacyAssemblyJSON'),
   versionToSemver: require('./versionToSemver')
 };
-},{"./prettyPrintLegacyAssemblyJSON":111,"./standardTranslateJsonCompilerOutput":112,"./versionToSemver":113}],111:[function(require,module,exports){
+},{"./prettyPrintLegacyAssemblyJSON":112,"./standardTranslateJsonCompilerOutput":113,"./versionToSemver":114}],112:[function(require,module,exports){
 module.exports = prettyPrintLegacyAssemblyJSON;
 
 function prettyPrintLegacyAssemblyJSON(assembly, source) {
@@ -16277,7 +16319,7 @@ function escapeString(text) {
     .replace(/\r/g, '\\r')
     .replace(/\t/g, '\\t');
 }
-},{}],112:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 // https://solidity.readthedocs.io/en/v0.5.1/using-the-compiler.html?highlight=legacyAST#output-description
 
 module.exports = standardTranslateJsonCompilerOutput;
@@ -16579,7 +16621,7 @@ function isMatchVersion(version, ...match) {
   }
   return false;
 }
-},{}],113:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 module.exports = versionToSemver;
 
 /// Translate old style version numbers to semver.
@@ -16602,7 +16644,7 @@ function versionToSemver(version) {
   // assume it is already semver compatible
   return version;
 }
-},{}],114:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 const linker = require('./linker.js');
 const translate = require('./translate');
 let soljson;
@@ -16771,7 +16813,7 @@ function wrapper(_soljson) {
     linkBytecode: linker.linkBytecode
   };
 }
-},{"./linker.js":109,"./translate":110}],115:[function(require,module,exports){
+},{"./linker.js":110,"./translate":111}],116:[function(require,module,exports){
 const solcVersion = require('solc-version');
 const getCompile = require('./getCompile');
 const getVersion = require('./getVersion');
@@ -16817,7 +16859,7 @@ function solcjs(_version) {
 }
 
 module.exports = solcjs;
-},{"./getCompile":98,"./getCompilersource":100,"./getVersion":103,"./loadModule":105,"./pretest":106,"./solc-wrapper/wrapper":114,"solc-version":88}],116:[function(require,module,exports){
+},{"./getCompile":99,"./getCompilersource":101,"./getVersion":104,"./loadModule":106,"./pretest":107,"./solc-wrapper/wrapper":115,"solc-version":89}],117:[function(require,module,exports){
 const translateJsonCompilerOutput = require('./solc-wrapper/translate/standardTranslateJsonCompilerOutput');
 const getCompileOutput = require('./getCompileOutput');
 const getStandardError = require('./getStandardError');
@@ -16840,9 +16882,9 @@ function wrapperCompile(oldSolc, sourcecode, readCallback) {
     return !output.contracts || Object.keys(output.contracts).length == 0;
   }
 }
-},{"./getCompileOutput":99,"./getStandardError":102,"./solc-wrapper/translate/standardTranslateJsonCompilerOutput":112}],117:[function(require,module,exports){
+},{"./getCompileOutput":100,"./getStandardError":103,"./solc-wrapper/translate/standardTranslateJsonCompilerOutput":113}],118:[function(require,module,exports){
 arguments[4][40][0].apply(exports,arguments)
-},{"dup":40}],118:[function(require,module,exports){
+},{"dup":40}],119:[function(require,module,exports){
 const getMessage = require('./lib/getMessage');
 const getRange = require('./lib/getRange');
 const isAddress = require('./lib/isAddress');
@@ -16864,7 +16906,7 @@ const validator = {
 };
 
 module.exports = validator;
-},{"./lib/getMessage":119,"./lib/getRange":120,"./lib/isAddress":121,"./lib/isBoolean":122,"./lib/isInt":123,"./lib/isUint":124,"./lib/isValid":125}],119:[function(require,module,exports){
+},{"./lib/getMessage":120,"./lib/getRange":121,"./lib/isAddress":122,"./lib/isBoolean":123,"./lib/isInt":124,"./lib/isUint":125,"./lib/isValid":126}],120:[function(require,module,exports){
 const assertString = require('./util/assertString');
 const isValid = require('./isValid');
 
@@ -16878,7 +16920,7 @@ function getMessage(type, str) {
   if (type.search(/\bbool/) != -1) return 'The value is not a boolean.';
   if (type.search(/\baddress/) != -1) return 'The value is not a valid address.';
 }
-},{"./isValid":125,"./util/assertString":126}],120:[function(require,module,exports){
+},{"./isValid":126,"./util/assertString":127}],121:[function(require,module,exports){
 const bigNumber = require('bignumber.js');
 const assertString = require('./util/assertString');
 
@@ -16916,7 +16958,7 @@ function getIntRange(type) {
     return range;
   }
 }
-},{"./util/assertString":126,"bignumber.js":117}],121:[function(require,module,exports){
+},{"./util/assertString":127,"bignumber.js":118}],122:[function(require,module,exports){
 const assertString = require('./util/assertString');
 var Web3Utils = require('web3-utils');
 
@@ -16926,7 +16968,7 @@ function isAddress(str) {
   assertString(str);
   return Web3Utils.isAddress(str);
 }
-},{"./util/assertString":126,"web3-utils":130}],122:[function(require,module,exports){
+},{"./util/assertString":127,"web3-utils":131}],123:[function(require,module,exports){
 const assertString = require('./util/assertString');
 
 module.exports = isBoolean;
@@ -16935,7 +16977,7 @@ function isBoolean(str) {
   assertString(str);
   return (['true', 'false'].indexOf(str) >= 0);
 }
-},{"./util/assertString":126}],123:[function(require,module,exports){
+},{"./util/assertString":127}],124:[function(require,module,exports){
 // 帶符號整型
 const BigNumber = require('bignumber.js');
 const assertString = require('./util/assertString');
@@ -16947,7 +16989,7 @@ function isInt(str, exponent) {
   let num = new BigNumber(str);
   return num.isInteger() && num.gte(-(Math.pow(2, exponent) / 2)) && num.lte((Math.pow(2, exponent) / 2) - 1);
 }
-},{"./util/assertString":126,"bignumber.js":117}],124:[function(require,module,exports){
+},{"./util/assertString":127,"bignumber.js":118}],125:[function(require,module,exports){
 // 不帶符號整型
 const bigNumber = require('bignumber.js');
 const assertString = require('./util/assertString');
@@ -16959,7 +17001,7 @@ function isUint(str, exponent) {
   let num = bigNumber(str);
   return num.isInteger() && num.gte(0) && num.lte(Math.pow(2, exponent) - 1);
 }
-},{"./util/assertString":126,"bignumber.js":117}],125:[function(require,module,exports){
+},{"./util/assertString":127,"bignumber.js":118}],126:[function(require,module,exports){
 const assertString = require('./util/assertString');
 const isAddress = require('./isAddress');
 const isBoolean = require('./isBoolean');
@@ -16977,7 +17019,7 @@ function isValid(type, value) {
   if (type.search(/\baddress/) != -1) return isAddress(value);
   return true;
 }
-},{"./isAddress":121,"./isBoolean":122,"./isInt":123,"./isUint":124,"./util/assertString":126}],126:[function(require,module,exports){
+},{"./isAddress":122,"./isBoolean":123,"./isInt":124,"./isUint":125,"./util/assertString":127}],127:[function(require,module,exports){
 module.exports = assertString;
 
 function assertString(input) {
@@ -16998,7 +17040,7 @@ function assertString(input) {
     throw new TypeError(`Expected string but received ${invalidType}.`);
   }
 }
-},{}],127:[function(require,module,exports){
+},{}],128:[function(require,module,exports){
 var isHexPrefixed = require('is-hex-prefixed');
 
 /**
@@ -17014,7 +17056,7 @@ module.exports = function stripHexPrefix(str) {
   return isHexPrefixed(str) ? str.slice(2) : str;
 }
 
-},{"is-hex-prefixed":56}],128:[function(require,module,exports){
+},{"is-hex-prefixed":57}],129:[function(require,module,exports){
 (function (global){
 //     Underscore.js 1.9.1
 //     http://underscorejs.org
@@ -18710,7 +18752,7 @@ module.exports = function stripHexPrefix(str) {
 }());
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],129:[function(require,module,exports){
+},{}],130:[function(require,module,exports){
 /*! https://mths.be/utf8js v3.0.0 by @mathias */
 ;(function(root) {
 
@@ -18914,7 +18956,7 @@ module.exports = function stripHexPrefix(str) {
 
 }(typeof exports === 'undefined' ? this.utf8 = {} : exports));
 
-},{}],130:[function(require,module,exports){
+},{}],131:[function(require,module,exports){
 /*
  This file is part of web3.js.
 
@@ -19280,7 +19322,7 @@ module.exports = {
 };
 
 
-},{"./soliditySha3.js":131,"./utils.js":132,"ethjs-unit":33,"randomhex":62,"underscore":128}],131:[function(require,module,exports){
+},{"./soliditySha3.js":132,"./utils.js":133,"ethjs-unit":33,"randomhex":63,"underscore":129}],132:[function(require,module,exports){
 /*
  This file is part of web3.js.
 
@@ -19527,7 +19569,7 @@ var soliditySha3 = function () {
 
 module.exports = soliditySha3;
 
-},{"./utils.js":132,"bn.js":9,"underscore":128}],132:[function(require,module,exports){
+},{"./utils.js":133,"bn.js":9,"underscore":129}],133:[function(require,module,exports){
 /*
  This file is part of web3.js.
 
@@ -20000,7 +20042,7 @@ module.exports = {
     sha3: sha3
 };
 
-},{"bn.js":9,"eth-lib/lib/hash":31,"number-to-bn":59,"underscore":128,"utf8":129}],133:[function(require,module,exports){
+},{"bn.js":9,"eth-lib/lib/hash":31,"number-to-bn":60,"underscore":129,"utf8":130}],134:[function(require,module,exports){
 const ethers = require('ethers')
 const bigNumber = require('bignumber.js')
 
@@ -20032,7 +20074,7 @@ function getAmount (currency, amount) {
   if (currency === 'wei')     return amount
 }
 
-},{"bignumber.js":8,"ethers":32}],134:[function(require,module,exports){
+},{"bignumber.js":8,"ethers":32}],135:[function(require,module,exports){
 const ethers = require('ethers')
 
 module.exports = decodeReturnData
@@ -20063,7 +20105,7 @@ function getTypes(types, i) {
   return types
 }
 
-},{"ethers":32}],135:[function(require,module,exports){
+},{"ethers":32}],136:[function(require,module,exports){
 const bigNumber = require('bignumber.js')
 const ethers = require('ethers')
 const convertToEther = require('convertToEther')
@@ -20180,7 +20222,7 @@ function getArgument(el, val) {
   return argument
 }
 
-},{"bignumber.js":8,"convertToEther":133,"ethers":32}],136:[function(require,module,exports){
+},{"bignumber.js":8,"convertToEther":134,"ethers":32}],137:[function(require,module,exports){
 module.exports = getDate
 
 function getDate () {
@@ -20203,7 +20245,7 @@ function getDate () {
 
 }
 
-},{}],137:[function(require,module,exports){
+},{}],138:[function(require,module,exports){
 const ethers = require('ethers')
 const decodeReturnData = require('decodeReturnData')
 
@@ -20229,7 +20271,7 @@ function getReturnData (opts) {
   return decodedData
 }
 
-},{"decodeReturnData":134,"ethers":32}],138:[function(require,module,exports){
+},{"decodeReturnData":135,"ethers":32}],139:[function(require,module,exports){
 module.exports = word => glossary[word]
 
 var glossary = {
@@ -20240,106 +20282,7 @@ var glossary = {
   undefined: `Type of this function is not defined.`
 }
 
-},{}],139:[function(require,module,exports){
-const bel = require("bel")
-const theme = require('theme')
-const csjs = require("csjs-inject")
-const ethers = require('ethers')
-var css
-let colors = setTheme('darkTheme')
-
-function setTheme(name) {
-  let colors = Object.assign({}, theme(name))
-  return colors
-}
-
-module.exports = inputPayable
-
-function inputPayable (label) {
-
-  return bel`
-    <div class=${css.inputContainer}>
-      <label class=${css.inputParam} title="data type: ${label}">value</label>
-      <div class=${css.inputArea}>
-        <input class=${css.inputField} type="number" placeholder="999" oninput=${validate}>
-        ${currencySelector()}
-        <div class=${css.ethIcon} title="Select amount you want to send with this function!"><i class="fab fa-ethereum"></i></div>
-      </div>
-    </div>`
-}
-
-  function validate (e) {
-    // @TODO
-  }
-
-function currencySelector () {
-  var button = bel`
-    <select class=${css.currency}>
-      <option value="wei">wei</option>
-      <option value="k-wei">k-wei</option>
-      <option value="m-wei">m-wei</option>
-      <option value="g-wei">g-wei</option>
-      <option value="micro">micro</option>
-      <option value="milli">milli</option>
-      <option value="ether">ether</option>
-      <option value="k-ether">k-ether</option>
-      <option value="m-ether">m-ether</option>
-      <option value="g-ether">g-ether</option>
-      <option value="t-ether">t-ether</option>
-    </select>`
-  return button
-}
-
-css = csjs`
-.inputContainer {
-  display: grid;
-  grid-template: auto / 100px auto;
-  margin-bottom: 15px;
-}
-.inputParam {
-  padding: ${colors.inputParamPadding};
-  color: ${colors.inputParamColor};
-  font-size: ${colors.inputParamFontSize};
-  text-align: ${colors.inputParamTextAlign};
-}
-.inputArea {
-  display: grid;
-  grid-template: auto / auto auto 30px;
-  grid-column-gap: 5px;
-}
-.inputField {
-  background-color: ${colors.inputFieldBackgroundColor};
-  border-radius: 2px;
-  color: ${colors.inputFieldColor};
-  border: ${colors.inputFieldBorder};
-  text-align: center;
-  font-family: ${colors.bodyFont};
-  font-size: ${colors.inputFieldFontSize};
-  padding: 5px;
-  width: calc(100% - 10px);
-}
-.inputField::placeholder {
-  color: ${colors.inputFieldPlaceholderColor};
-}
-.currency {
-  font-family: ${colors.bodyFont};
-  border-radius: ${colors.currencyBorderRadius};
-  border: ${colors.currencyBorder};
-  padding: 5px 7px;
-  color: ${colors.currencyColor};
-  background-color: ${colors.currencyBackgroundColor};
-  font-size: ${colors.currencyFontSize};
-}
-
-.ethIcon {
-  color: ${colors.ethIconColor};
-  font-size: ${colors.ethIconFontSize};
-  text-align: center;
-  align-self: center;
-}
-`
-
-},{"bel":7,"csjs-inject":14,"ethers":32,"theme":145}],140:[function(require,module,exports){
+},{}],140:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require("csjs-inject")
 
@@ -20440,7 +20383,7 @@ function makeDeployReceipt (provider, contract) {
   return el
 }
 
-},{"bel":7,"copy-text-to-clipboard":11,"csjs-inject":14,"getDate":136,"moreInfo":143,"theme":145}],142:[function(require,module,exports){
+},{"bel":7,"copy-text-to-clipboard":11,"csjs-inject":14,"getDate":137,"moreInfo":143,"theme":145}],142:[function(require,module,exports){
 const bel = require("bel")
 const moreInfo = require('moreInfo')
 const getReturnData = require('getReturnData')
@@ -20513,7 +20456,7 @@ function makeTxReturn (css, data) {
     </div>`
 }
 
-},{"bel":7,"csjs-inject":14,"getReturnData":137,"moreInfo":143,"theme":145}],143:[function(require,module,exports){
+},{"bel":7,"csjs-inject":14,"getReturnData":138,"moreInfo":143,"theme":145}],143:[function(require,module,exports){
 const colors = require('theme')
 const bel = require('bel')
 const csjs = require('csjs-inject')
@@ -20657,8 +20600,8 @@ const lightTheme = {
   titleFontSize: '1.8rem',
   deployTitleFontSize: '1.6rem',
   txReturnItemFontSize: '1.4rem',
-  txReturnItemColor: '#8086BA',
-  txReturnItemBackgroundColor: '#CADCE4',
+  txReturnItemColor: '#A0A0FF',
+  txReturnItemBackgroundColor: '#F5F8FA',
   loaderBackgroundColor: '#A0A0FF',
   txReturnTitleColor: grey8D,
   txReturnTitleFontSize: '1.3rem',
@@ -20978,11 +20921,13 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     function functions (fn) {
+      var theme = { classes: css }
       var label = fn.stateMutability
       var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><span class=${css.name}>${fn.name}</span></a>`
       var title = bel`<h3 class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</h3>`
       var send = bel`<button class="${css.button} ${css.send}" onclick=${e => sendTx(fn.name, label, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></button>`
       var functionClass = css[label]
+      console.log(theme)
       var el = bel`
       <div class=${css.fnContainer}>
         <div class="${functionClass} ${css.function}">
@@ -20994,10 +20939,8 @@ function displayContractUI(result) {   // compilation result metadata
             </div>
           </div>
         </div>
-        <div class="${css.txReturnItem}"><div class="${css.txReceipt}"><div class="${css.txReturnField}"><div class="${css.txReturnValue}">"20"</div></div></div></div>
-        <div class=${css.txReturnItem}>Awaiting network confirmation ${loadingAnimation(colors)}</div>
       </div>`
-      if (label === 'payable')  send.parentNode.insertAdjacentElement('beforeBegin', inputPayable(label))
+      if (label === 'payable')  send.parentNode.insertAdjacentElement('beforeBegin', inputPayable({ theme, label}))
       return el
     }
 
@@ -21134,7 +21077,6 @@ function displayContractUI(result) {   // compilation result metadata
 
     var topContainer = bel`<section class=${css.topContainer}></section>`
     var ctor = bel`<div class="${css.ctor}">
-      <div class=${css.deploying}>Publishing to Ethereum network ${loadingAnimation(colors)}</div>
       ${metadata.constructorInput}
       <div class=${css.actions}>
         <button class="${css.button} ${css.deploy}" onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
@@ -21146,7 +21088,6 @@ function displayContractUI(result) {   // compilation result metadata
 
     return bel`
     <div class=${css.preview}>
-      ${themeSwitch()}
       <section class=${css.constructorFn}>
         <h1 class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
           ${metadata.constructorName}
@@ -21642,6 +21583,26 @@ input[type="range"]:focus::-ms-fill-upper {
   font-size: 2.4rem;
   color: #A0A0FF;
 }
+.inputArea {
+  display: grid;
+  grid-template: auto / auto auto 30px;
+  grid-column-gap: 5px;
+}
+.currency {
+  font-family: ${colors.bodyFont};
+  border-radius: ${colors.currencyBorderRadius};
+  border: ${colors.currencyBorder};
+  padding: 5px 7px;
+  color: ${colors.currencyColor};
+  background-color: ${colors.currencyBackgroundColor};
+  font-size: ${colors.currencyFontSize};
+}
+.ethIcon {
+  color: ${colors.ethIconColor};
+  font-size: ${colors.ethIconFontSize};
+  text-align: center;
+  align-self: center;
+}
 @media (max-width: 640px) {
   .preview {
     max-width: 100%;
@@ -21662,4 +21623,4 @@ function hover () {
   `
 }
 
-},{"bel":7,"copy-text-to-clipboard":11,"csjs-inject":14,"ethers":32,"getArgs":135,"glossary":138,"input-address":37,"input-array":38,"input-boolean":39,"input-byte":52,"input-integer":53,"input-payable":139,"input-string":54,"loadingAnimation":140,"makeDeployReceipt":141,"makeReturn":142,"shortenHexData":144,"theme":145}]},{},[1]);
+},{"bel":7,"copy-text-to-clipboard":11,"csjs-inject":14,"ethers":32,"getArgs":136,"glossary":139,"input-address":37,"input-array":38,"input-boolean":39,"input-byte":52,"input-integer":53,"input-payable":54,"input-string":55,"loadingAnimation":140,"makeDeployReceipt":141,"makeReturn":142,"shortenHexData":144,"theme":145}]},{},[1]);

@@ -219,11 +219,13 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     function functions (fn) {
+      var theme = { classes: css }
       var label = fn.stateMutability
       var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><span class=${css.name}>${fn.name}</span></a>`
       var title = bel`<h3 class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</h3>`
       var send = bel`<button class="${css.button} ${css.send}" onclick=${e => sendTx(fn.name, label, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></button>`
       var functionClass = css[label]
+      console.log(theme)
       var el = bel`
       <div class=${css.fnContainer}>
         <div class="${functionClass} ${css.function}">
@@ -235,10 +237,8 @@ function displayContractUI(result) {   // compilation result metadata
             </div>
           </div>
         </div>
-        <div class="${css.txReturnItem}"><div class="${css.txReceipt}"><div class="${css.txReturnField}"><div class="${css.txReturnValue}">"20"</div></div></div></div>
-        <div class=${css.txReturnItem}>Awaiting network confirmation ${loadingAnimation(colors)}</div>
       </div>`
-      if (label === 'payable')  send.parentNode.insertAdjacentElement('beforeBegin', inputPayable(label))
+      if (label === 'payable')  send.parentNode.insertAdjacentElement('beforeBegin', inputPayable({ theme, label}))
       return el
     }
 
@@ -375,7 +375,6 @@ function displayContractUI(result) {   // compilation result metadata
 
     var topContainer = bel`<section class=${css.topContainer}></section>`
     var ctor = bel`<div class="${css.ctor}">
-      <div class=${css.deploying}>Publishing to Ethereum network ${loadingAnimation(colors)}</div>
       ${metadata.constructorInput}
       <div class=${css.actions}>
         <button class="${css.button} ${css.deploy}" onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
@@ -387,7 +386,6 @@ function displayContractUI(result) {   // compilation result metadata
 
     return bel`
     <div class=${css.preview}>
-      ${themeSwitch()}
       <section class=${css.constructorFn}>
         <h1 class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
           ${metadata.constructorName}
@@ -882,6 +880,26 @@ input[type="range"]:focus::-ms-fill-upper {
 .infoIcon a {
   font-size: 2.4rem;
   color: #A0A0FF;
+}
+.inputArea {
+  display: grid;
+  grid-template: auto / auto auto 30px;
+  grid-column-gap: 5px;
+}
+.currency {
+  font-family: ${colors.bodyFont};
+  border-radius: ${colors.currencyBorderRadius};
+  border: ${colors.currencyBorder};
+  padding: 5px 7px;
+  color: ${colors.currencyColor};
+  background-color: ${colors.currencyBackgroundColor};
+  font-size: ${colors.currencyFontSize};
+}
+.ethIcon {
+  color: ${colors.ethIconColor};
+  font-size: ${colors.ethIconFontSize};
+  text-align: center;
+  align-self: center;
 }
 @media (max-width: 640px) {
   .preview {
