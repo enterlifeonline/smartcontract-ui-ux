@@ -14989,6 +14989,7 @@ function displayIntegerInput ({ theme: { classes: css }, type, cb }) {
 
 },{"bel":7,"bignumber.js":8,"csjs-inject":14,"solidity-validator":119}],54:[function(require,module,exports){
 const bel = require("bel")
+const csjs = require("csjs-inject")
 
 module.exports = inputPayable
 
@@ -15029,7 +15030,7 @@ function inputPayable ({ theme: { classes: css }, label }) {
 }
 
 
-},{"bel":7}],55:[function(require,module,exports){
+},{"bel":7,"csjs-inject":14}],55:[function(require,module,exports){
 const bel = require('bel')
 const csjs = require('csjs-inject')
 const validator = require('solidity-validator')
@@ -20288,49 +20289,132 @@ const csjs = require("csjs-inject")
 
 module.exports = loadingAnimation 
 
-function loadingAnimation (colors) {
+function loadingAnimation (colors, text) {
   const css = csjs`
   .loader {
-    display: inline-block;
+    position: relative;
+    width: 100%;
+    min-height: 30px;
+    margin: 0 auto;
+    /* border: 1px solid red; */
   }
-  .loader:before {
-    content: "";
-    display: inline-block;
-    width: 4px;
-    height: 4px;
-    background-color: ${colors.loaderBackgroundColor};
-    animation: rotatemove 2s infinite;
-    border-radius: 50%;
+  .loaderText {
+    text-align: center;
+    color: #09FFC3;
+    font-size: 1.4rem;
+    animation: gradientText 4s linear infinite;
   }
-
-  @keyframes rotatemove {
-    0%{
-      -webkit-transform: scale(1) translateX(0);
-      -ms-transform: scale(1) translateX(0);
-      -o-transform: scale(1) translateX(0);
-      transform: scale(1) translateX(0);
+  
+  @keyframes gradientText {
+    30% {
+      color: #6700FF;
     }
-
-    100%{
-      -webkit-transform: scale(2) translateX(9rem);
-      -ms-transform: scale(2) translateX(9rem);
-      -o-transform: scale(2) translateX(9rem);
-      transform: scale(2) translateX(9rem);
+    60% {
+      color: #00BFFF;
     }
-  }`
+    100% {
+      color: #09FFC3;
+    }
+  }
+  .spinner {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .spinner span {
+    position: absolute;
+    left: 0;
+    top: 20%;
+    display: inline-block;
+    opacity: 0;
+    width: 8px;
+    height: 8px;
+    background-color: #6700FF;
+    border-radius: 50%;  
+    animation: move 4s ease-in-out infinite;
+  }
+  .spinner span:nth-child(2) {
+    animation-delay: .4s;
+  }
+  .spinner span:nth-child(3) {
+    animation-delay: .8s;
+  }
+  .spinner span:nth-child(4) {
+    animation-delay: 1.2s;
+  }
+  .spinner span:nth-child(5) {
+    animation-delay: 1.6s;
+  }
+  
+  @keyframes move {
+    0% {
+      left: 30%;
+      top: -5px;
+      transform: rotate3d(0);
+      opacity: 0;
+    }
+    25% {
+      transform: rotate3d(-2, 1, -.3, 3turn);
+      height: 20px;
+      top: 10px;
+      opacity: .8;
+    }
+    50% {
+      left: 90%;
+      top: 40%;
+      width: 22px;
+      height: 22px;
+      transform: rotate3d(2, -1, -1, 3turn);
+      opacity: 1;
+      background-color: #00BFFF;
+    }
+    75% {
+      top: 20px;
+      transform: rotate3d(-1, .45, 1, 3rad)
+      height: 8px;
+      width: 8px;
+      opacity: .6;
+      background-color: #09FFC3;
+    }
+    100% {
+      transform: rotate3d(0);
+      top: 30px;
+      left: 120px;
+      opacity: 0;
+    }
+  }
+  `
   // @TODO: fix theming to not create 10000 style tags for 1000 spinners
-  return bel`<div class=${css.loader}></div>`
+  return bel`
+  <div class=${css.loader}>
+    <div class=${css.loaderText}>${text}</div>
+    <div class=${css.spinner}>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+  `
 }
 
 },{"bel":7,"csjs-inject":14}],141:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require('csjs-inject')
-const colors = require('theme')
+const theme = require('theme')
+var colors = setTheme('darkTheme')
 const date = require('getDate')
 const copy = require('copy-text-to-clipboard')
 const moreInfo = require('moreInfo')
 
 module.exports = makeDeployReceipt
+
+function setTheme(name) {
+  let colors = Object.assign({}, theme(name))
+  return colors
+}
 
 var css = csjs`
 .txReceipt {
@@ -20338,6 +20422,8 @@ var css = csjs`
   justify-content: flex-start;
   flex-direction: column;
   margin-left: 1em;
+  position: relative;
+  z-index: 99;
 }
 .txReturnField {
   display:flex;
@@ -20346,17 +20432,16 @@ var css = csjs`
   margin-bottom: 2%;
 }
 .txReturnTitle {
-  color: ${colors.lightGrey};
-  margin-right: 5px;
-  width: 50%;
+  color: ${colors.txReturnTitleColor};
+  font-size: ${colors.txReturnTitleFontSize};
 }
 .txReturnValue {
-  color: ${colors.slateGrey};
-  cursor: pointer;
+  color: ${colors.txReturnValueColor};
+  font-size: ${colors.txReturnValueFontSize};
   word-break: break-all;
+  white-spacing: pre-wrap;
 }
 .txReturnValue:hover {
-  cursor: pointer;
   opacity: 0.6;
 }
 .date {}
@@ -20388,43 +20473,44 @@ const bel = require("bel")
 const moreInfo = require('moreInfo')
 const getReturnData = require('getReturnData')
 const csjs = require('csjs-inject')
-const colors = require('theme')
+const theme = require('theme')
+var colors = setTheme('darkTheme')
 
 module.exports = makeReturn
+
+function setTheme(name) {
+  let colors = Object.assign({}, theme(name))
+  return colors
+}
 
 var css = csjs`
 .txReturnItem {
   position: relative;
-  font-size: 0.7rem;
-  display: flex;
-  color: ${colors.whiteSmoke};
-  border: 1px solid ${colors.darkSmoke};
-  width: 87%;
-  margin: 3%;
-  padding: 3%;
-  justify-content: space-between;
-  flex-direction: column;
+  border-bottom: 1px solid #21252b;
+  width: 100%;
+  margin: 0;
+  padding: 12px 0;
+  transition: color .6s ease-in-out;
+}
+.txReturnItem:hover {
+  background-color: rgba(103,0,255, .8);
 }
 .txReceipt {
-  display:flex;
-  justify-content: flex-start;
-  flex-direction: column;
 }
 .txReturnField {
-  display:flex;
-  justify-content: flex-start;
-  flex-direction: column;
-  margin-bottom: 1%;
 }
 .txReturnValue {
-  color: ${colors.slateGrey};
+  color: #8d8d8d;
   cursor: pointer;
   word-break: break-all;
+  font-size: 1.4rem;
+  text-align: center;
+  transition: color .6s ease-in-out;
 }
-.txReturnValue:hover {
-  cursor: pointer;
-  opacity: 0.6;
-}`
+.txReturnItem:hover .txReturnValue {
+  color: rgba(255,255,255, 1);
+}
+`
 
 async function makeReturn (contract, solcMetadata, provider, transaction, fnName) {
   var decodedTx
@@ -20448,34 +20534,37 @@ async function makeReturn (contract, solcMetadata, provider, transaction, fnName
 }
 
 function makeTxReturn (css, data) {
-  return bel`
-    <div class=${css.txReceipt}>
-        <div class=${css.txReturnField}>
-          <div class=${css.txReturnValue}>${JSON.stringify(data, null, 2)}</div>
-        </div>
-    </div>`
+  return bel`<div class=${css.txReturnValue}>${JSON.stringify(data, null, 2)}</div>`
 }
 
 },{"bel":7,"csjs-inject":14,"getReturnData":138,"moreInfo":143,"theme":145}],143:[function(require,module,exports){
-const colors = require('theme')
+const theme = require('theme')
+var colors = setTheme('darkTheme')
 const bel = require('bel')
 const csjs = require('csjs-inject')
 
 module.exports = moreInfo
 
+function setTheme(name) {
+  let colors = Object.assign({}, theme(name))
+  return colors
+}
+
 var css = csjs`
   .infoIcon {
     position: absolute;
     right: 5px;
-    bottom: 0px;
-    color: ${colors.slateGrey};
+    bottom: 5px;
   }
   .infoIcon a {
-    font-size: 1.3em;
+    font-size: 1.2em;
     text-decoration: none;
-    color: ${colors.whiteSmoke};
+    color: #3E404E;
+    opacity: 1;
+    transition: color .6s, opacity .6s ease-in-out;
   }
   .infoIcon a:hover {
+    color: white;
     opacity: 0.6;
   }
 `
@@ -20534,11 +20623,11 @@ const lightTheme = {
   bodyTextColor: dark,
   previewMaxWidth: '480px',
   topContainerBackgroundColor: white,
-  topContainerBorderRadius: '2px',
+  topContainerBorderRadius: '6px',
   topContainerBorder: 'none',
-  fnContainerBackgroundColor: white,
+  fnContainerBackgroundColor: transparent,
   fnContainerBoxShadow: '0 6px 10px rgba(0,0,0, .1)',
-  fnContainerBorderRadius: '2px',
+  fnContainerBorderRadius: '6px',
   fnContainerBorder: 'none',
   transparent: transparent,
   white: "#ffffff", // borders, font on input background
@@ -20557,7 +20646,8 @@ const lightTheme = {
   contractNameColor: dark,
   nameFontSize: '1.8rem',
   inputParamColor: dark,
-  inputParamFontSize: '1.3rem',
+  inputParamColorHover: dark,
+  inputParamFontSize: '1.4rem',
   inputParamTextAlign: 'right',
   inputParamPadding: '6px 15px 0 0',
   integerValueFontSize: '1.4rem',
@@ -20599,31 +20689,35 @@ const lightTheme = {
   deployBackgroundColor: transparent,
   titleFontSize: '1.8rem',
   deployTitleFontSize: '1.6rem',
-  txReturnItemFontSize: '1.4rem',
-  txReturnItemColor: '#A0A0FF',
-  txReturnItemBackgroundColor: '#F5F8FA',
+  txReturnValueFontSize: '1.4rem',
+  txRetrunValueTextAlign: 'center',
+  txReturnValueColor: '#A0A0FF',
+  txReturnItemBackgroundColor: transparent,
   loaderBackgroundColor: '#A0A0FF',
   txReturnTitleColor: grey8D,
-  txReturnTitleFontSize: '1.3rem',
+  txReturnTitleFontSize: '1.4rem',
   txReturnValueColor: dark,
-  txReturnValueFontSize: '1.3rem',
+  txReturnValueFontSize: '1.6rem',
   integerSliderBackgroundColor: '#DCD7D6',
   integerSliderFocusBackgroundColor: grey8D,
   integerThumbBackgroundColor: '#00A2F9',
+  sendFontSize: '1.3rem',
+  cardHoverGradientBackground: 'none',
+  visibleBackgroundColor: white,
 }
 
 const darkTheme = {
   bodyFont: fontNunito,
   bodyFontSize: '1.6rem',
-  bodyBackgroundColor: dark,
+  bodyBackgroundColor: dark18,
   bodyTextColor: white,
   previewMaxWidth: '480px',
-  topContainerBackgroundColor: '#605fa0',
-  topContainerBorderRadius: '2px',
-  topContainerBorder: 'none',
-  fnContainerBackgroundColor: '#605fa0',
+  topContainerBackgroundColor: 'linear-gradient(to bottom, rgba(29,29,38, 1) 100%, rgba(29,29,38, 1) 100%)',
+  topContainerBorderRadius: '6px',
+  topContainerBorder: `1px solid ${dark1d}`,
+  fnContainerBackgroundColor: transparent,
   fnContainerBoxShadow: 'none',
-  fnContainerBorderRadius: '2px',
+  fnContainerBorderRadius: '6px',
   fnContainerBorder: 'none',
   transparent: transparent,
   white: "#ffffff", // borders, font on input background
@@ -20641,22 +20735,23 @@ const darkTheme = {
   androidGreen: "#9BC53D", // success
   contractNameColor: whiteSmoke,
   nameFontSize: '1.8rem',
-  inputParamColor: white,
-  inputParamFontSize: '1.3rem',
+  inputParamColor: grey8D,
+  inputParamColorHover: white,
+  inputParamFontSize: '1.4rem',
   inputParamTextAlign: 'right',
   inputParamPadding: '6px 15px 0 0',
   integerValueFontSize: '1.4rem',
   integerValueTextAlign: 'center',
   integerValueColor: white,
   integerValuePlaceholderColor: grey8D,
-  integerValueBackgroundColor: dark,
-  integerValueBorder: 'none',
+  integerValueBackgroundColor: transparent,
+  integerValueBorder: `1px solid ${bluePurple}`,
   integerValueBorderRadius: '2px',
   inputFieldTextAlign: 'center',
   inputFieldColor: white,
   inputFieldPlaceholderColor: grey8D,
-  inputFieldBackgroundColor: dark,
-  inputFieldBorder: 'none',
+  inputFieldBackgroundColor: transparent,
+  inputFieldBorder: `1px solid ${bluePurple}`,
   inputFieldBorderRadius: '2px',
   inputFieldFontSize: '1.4rem',
   arrayPlusMinusColor: whiteSmoke,
@@ -20667,34 +20762,42 @@ const darkTheme = {
   ethIconColor: orange,
   currencyFontSize: '1.4rem',
   currencyColor: white,
-  currencyBackgroundColor: dark,
-  currencyBorder: 'none',
+  currencyBackgroundColor: transparent,
+  currencyBorder: `1px solid ${bluePurple}`,
   currencyBorderRadius: '2px',
   booleanFieldColor: white,
   booleanFieldActiveColor: dark,
-  booleanFieldBackgroundColor: dark,
+  booleanFieldBackgroundColor: '#161823',
   booleanFieldFontSize: '1.4rem',
   booleanFieldTruedBackgroundColor: '#8EF9F6',
   booleanFieldFalsedBackgroundColor: violetRed,
   valSuccessColor: aquaMarine,
   sendColor: '#DCD7D6',
-  sendBackgroundColor: transparent,
+  sendBackgroundColor: 'rgba(255,255,255, 0)',
   deployFontSize: '1.8rem',
   deployColor: '#DCD7D6',
-  deployBackgroundColor: transparent,
+  deployBackgroundColor: 'rgba(255,255,255, 0)',
   titleFontSize: '1.8rem',
   deployTitleFontSize: '1.6rem',
-  txReturnItemFontSize: '1.2rem',
-  txReturnItemColor: white,
-  txReturnItemBackgroundColor: '#8086BA',
-  loaderBackgroundColor: white,
-  txReturnTitleColor: '#2C323D',
-  txReturnTitleFontSize: '1.3rem',
+  txReturnValueFontSize: '1.2rem',
+  txRetrunValueTextAlign: 'center',
   txReturnValueColor: white,
-  txReturnValueFontSize: '1.3rem',
-  integerSliderBackgroundColor: '#DCD7D6',
-  integerSliderFocusBackgroundColor: white,
-  integerThumbBackgroundColor: '#07FDFC',
+  txReturnItemBackgroundColor: transparent,
+  loaderBackgroundColor: white,
+  txReturnTitleColor: grey8D,
+  txReturnTitleFontSize: '1.4rem',
+  txReturnValueColor: lightGreen,
+  txReturnValueColorHover: white,
+  txReturnValueFontSize: '1.6rem',
+  integerSliderBackgroundColor: '#313136',
+  integerSliderFocusBackgroundColor: grey8D,
+  integerThumbBackgroundColor: white,
+  sendFontSize: '1.3rem',
+  cardHoverGradientBackground: `linear-gradient(0deg, rgba(103,0,255, 0.1) 0%, rgba(103,0,255, .5) 100%)`,
+  visibleBackgroundColor: dark1d,
+  fnViewNameColor: '#09FFC3',
+  fnPayableNameColor: '#F3EA00',
+  fnNonPayableNameColor: '#00BFFF',
 }
 
 const themes = { darkTheme, lightTheme }
@@ -20925,17 +21028,19 @@ function displayContractUI(result) {   // compilation result metadata
       var label = fn.stateMutability
       var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><span class=${css.name}>${fn.name}</span></a>`
       var title = bel`<h3 class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</h3>`
-      var send = bel`<button class="${css.button} ${css.send}" onclick=${e => sendTx(fn.name, label, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></button>`
+      var send = bel`<button class="${css.button} ${css.send}" 
+                onclick=${e => sendTx(fn.name, label, e)}>SEND <i class="${css.icon} fa fa-arrow-right"></i></button>`
       var functionClass = css[label]
-      console.log(theme)
       var el = bel`
       <div class=${css.fnContainer}>
         <div class="${functionClass} ${css.function}">
           ${title}
           <div class=${css.visible}>
-            ${fn.inputs}
+            <div class=${css.inputsList}>
+              ${fn.inputs}
+            </div>
             <div class=${css.actions}>
-            ${send}
+              ${send}
             </div>
           </div>
         </div>
@@ -20945,11 +21050,14 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     async function sendTx (fnName, label, e) {
-      var loader = bel`<div class=${css.txReturnItem}>Awaiting network confirmation ${loadingAnimation(colors)}</div>`
-      var container = e.target.parentNode.parentNode.parentNode.parentNode
+      var theme = { classes: css, colors }
+      var loader = bel`<div class=${css.txReturnItem}>${loadingAnimation(colors, 'Awaiting network confirmation')}</div>`
+      var container = e.target.parentNode.parentNode
+      var sibling = e.target.parentNode.previousElementSibling
       var txReturn = container.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
       if (contract) {  // if deployed
-        container.appendChild(txReturn)
+        container.insertBefore(txReturn, sibling)
+        // container.appendChild(txReturn)
         txReturn.appendChild(loader)
         let signer = await provider.getSigner()
         var allArgs = getArgs(container, 'inputContainer')
@@ -20963,20 +21071,20 @@ function displayContractUI(result) {   // compilation result metadata
           loader.replaceWith(await makeReturn(contract, solcMetadata, provider, transaction, fnName))
         } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
       } else {
-        let deploy = document.querySelector("[class^='deploy']")
+        let deploy = document.querySelector("#publish")
         deploy.classList.add(css.bounce)
         setTimeout(()=>deploy.classList.remove(css.bounce), 3500)
       }
     }
 
     function toggleAll (e) {
-      var fnContainer = e.currentTarget.parentElement.parentElement.children[3]
+      var fnContainer = e.currentTarget.parentElement.parentElement.children[2]
       var constructorToggle = e.currentTarget.children[0]
       var constructorIcon = constructorToggle.children[0]
       constructorToggle.removeChild(constructorIcon)
-      var minus = bel`<i class="fa fa-minus-circle" title="Collapse">`
-      var plus = bel`<i class="fa fa-plus-circle title='Expand to see the details'">`
-      var icon = constructorIcon.className.includes('plus') ? minus : plus
+      var on = bel`<i class="fa fa-angle-right ${css.collapse}" title="Collapse">`
+      var off = bel`<i class="fa fa-angle-right ${css.expend}" title="Expand to see the details">`
+      var icon = constructorIcon.className.includes('expend') ? on : off
       constructorToggle.appendChild(icon)
       for (var i = 0; i < fnContainer.children.length; i++) {
         var fn = fnContainer.children[i]
@@ -21010,12 +21118,12 @@ function displayContractUI(result) {   // compilation result metadata
         toggleContainer = e.children[1]
         var fnInputs = fn.children[1]
         // Makes sure all functions are opened or closed before toggleAll executes
-        if (constructorIcon.className.includes('plus') && fnInputs.className === css.visible.toString()) {
+        if (constructorIcon.className.includes('expend') && fnInputs.className === css.visible.toString()) {
           fnInputs.classList.remove(css.visible)
           fnInputs.classList.add(css.hidden)
           removeLogs(fn)
         }
-        else if (constructorIcon.className.includes('minus') && fnInputs.className === css.hidden.toString()) {
+        else if (constructorIcon.className.includes('collapse') && fnInputs.className === css.hidden.toString()) {
           fnInputs.classList.remove(css.hidden)
           fnInputs.classList.add(css.visible)
           addLogs(fn)
@@ -21040,13 +21148,14 @@ function displayContractUI(result) {   // compilation result metadata
 
 // Create and deploy contract using WEB3
     async function deployContract() {
+      var theme = { classes: css }
       let abi = solcMetadata.output.abi
       let bytecode = opts.metadata.bytecode
       provider =  await getProvider()
       let signer = await provider.getSigner()
       var el = document.querySelector("[class^='ctor']")
       let factory = await new ethers.ContractFactory(abi, bytecode, signer)
-      el.replaceWith(bel`<div class=${css.deploying}>Publishing to Ethereum network ${loadingAnimation(colors)}</div>`)
+      el.replaceWith(bel`<div class=${css.deploying}>${loadingAnimation(colors, 'Publishing to Ethereum network')}</div>`)
       try {
         var allArgs = getArgs(el, 'inputContainer')
         let args = allArgs.args
@@ -21079,8 +21188,8 @@ function displayContractUI(result) {   // compilation result metadata
     var ctor = bel`<div class="${css.ctor}">
       ${metadata.constructorInput}
       <div class=${css.actions}>
-        <button class="${css.button} ${css.deploy}" onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
-          <i class="${css.icon} fa fa-arrow-circle-right"></i>
+        <button id="publish" class="${css.button} ${css.deploy}" onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
+          PUBLISH <i class="${css.icon} fa fa-arrow-right"></i>
         </button>
       </div>
     </div>`
@@ -21091,7 +21200,7 @@ function displayContractUI(result) {   // compilation result metadata
       <section class=${css.constructorFn}>
         <h1 class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
           ${metadata.constructorName}
-          <span class="${css.icon} ${css.expend}"><i class="fa fa-minus-circle" title="Expand to see the details"></i></span>
+          <span class="${css.icon} ${css.expend}"><i class="fa fa-angle-right" title="Expand to see the details"></i></span>
         </h1>
       </section>
       ${topContainer}
@@ -21166,27 +21275,38 @@ button {
   font-size: 1.3rem;
 }
 .visible {
-  visibility: visible;
-  height: 100%;
+  display: block;
+  border: 1px solid #1d1d26;
+  background-color: ${colors.visibleBackgroundColor};
+  padding: 22px 30px 10px 22px;
+  border-radius: 4px;
+  transform: scale(1);
+  transition: transform .6s, border .6s ease-out;
+  -webkit-transition: transform .6s, border .6s ease-out;
 }
 .hidden {
-  visibility: hidden;
-  height: 0;
+  display: none;
 }
 .txReturn {
+  position: relative;
+  z-index: 3;
+  margin: 0 -30px 22px -22px;
+  max-height: 180px;
+  overflow-hidden;
+  overflow-y: auto;
 }
 .deploying {
-  display: grid;
-  grid-template: auto / auto 1fr;
-  font-size: 1.4rem;
-  padding: 10px 14px 20px 14px;
+
 }
 .txReturnItem {
-  margin: 1px -12px 0 -20px;
-  padding: 20px 14px 20px 20px;
-  font-size: ${colors.txReturnItemFontSize};
-  color: ${colors.txReturnItemColor};
+  margin: 0 0 1px 0;
+  padding: 20px 0;
+  text-align: ${colors.txRetrunTextAlign};
   background-color: ${colors.txReturnItemBackgroundColor}
+}
+.txReturnItem .infoIcon {
+  right: 6px;
+  botom: 6px;
 }
 .contractName {
   position: relative;
@@ -21198,7 +21318,7 @@ button {
   margin: 20px 0;
 }
 .contractName:hover {
-  ${hover()}
+  opacity: .6;
 }
 .fnName {
   font-size: 2rem;
@@ -21234,16 +21354,58 @@ button {
   color: ${colors.deployColor};
   font-size: ${colors.deployFontSize};
   background-color: ${colors.deployBackgroundColor};
-  padding: 0;
+  border-radius: 30px;
+  padding: 10px 17px 10px 22px;
+  position: absolute;
+  top: -8px;
+  right: -35px;
+  transition: background-color .6s ease-in-out;
 } 
-.deploy:hover, .send:hover, .title:hover {
+.deploy:hover, .send:hover {
   ${hover()}
+}
+.deploy:hover .icon, .send:hover .icon {
+  animation: arrowMove 1s ease-in-out infinite;
+}
+@keyframes arrowMove {
+  0% {
+    right: 0;
+  }
+  50% {
+    right: -10px;
+  }
+  100% {
+    right: 0;
+  }
+}
+@-webki-tkeyframes arrowMove {
+  0% {
+    right: 0;
+  }
+  50% {
+    right: -10px;
+  }
+  100% {
+    right: 0;
+  }
+}
+.title:hover  {
+  cursor: pointer;
+  opacity: .6;
 }
 .send {
   color: ${colors.sendColor};
   font-size: ${colors.sendFontSize};
   background-color: ${colors.sendBackgroundColor};
-  padding: 0;
+  padding: 10px 17px 10px 22px;
+  border-radius: 30px;
+  position: absolute;
+  right: -35px;
+  bottom: -28px;
+  transition: background-color .6s ease-in-out;
+}
+.send .icon {
+  font-size: 1.2rem;
 }
 .bounce {
   animation: bounceRight 2s infinite;
@@ -21290,7 +21452,7 @@ button {
     transform: translateX(0);}
 }
 .fnContainer {
-  padding: 14px 12px 0px 20px;
+  padding: 0px;
   margin-bottom: 20px;
   border-radius: ${colors.fnContainerBorderRadius};
   border: ${colors.fnContainerBorder};
@@ -21306,16 +21468,47 @@ button {
   position: relative;
 }
 .topContainer {
-  padding: 14px 12px 0px 20px;
   margin-bottom: 20px;
   border-radius: ${colors.topContainerBorderRadius};
   border: ${colors.topContainerBorder};
-  background-color: ${colors.topContainerBackgroundColor};
+  background: ${colors.topContainerBackgroundColor};
+  padding: 22px 10px 12px 22px;
+  transform: scale(1);
+  -webkit-transition: transform .5s, border .5s ease-out;
+  transition: transform .5s, border .5s ease-out;
 }
 .ctor {
   display: grid;
   grid-template-rows: auto;
   grid-template-columns: auto;
+}
+.topContainer:hover, .fnContainer:hover .visible {
+  border: 1px solid rgba(103,25,255, .25);
+  box-shadow: 0px 6px 20px rgba(0, 0, 0, .3);
+  transform: scale(1.02);
+  -webkit-transform: scale(1.02);
+}
+.topContainer:before, .visible:before {
+  content: '';
+  display: block;
+  background: ${colors.cardHoverGradientBackground};
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity .6s ease-in-out;
+}
+.topContainer:hover:before, .fnContainer:hover .visible:before {
+  opacity: 1;
+}
+.topContainer:hover .inputParam, .fnContainer:hover .inputParam {
+  color: ${colors.inputParamColorHover};
+}
+.topContainer:hover .txReceipt .txReturnValue {
+  color: ${colors.txReturnValueColorHover};
 }
 .signature {
   
@@ -21323,21 +21516,27 @@ button {
 .pure {
   color: ${colors.yellow};
 }
-.view {
+.view .name {
+  color: ${colors.fnViewNameColor}
 }
-.nonpayable {
+.nonpayable .name {
+  color: ${colors.fnNonPayableNameColor}
 }
-.payable {
+.payable .name {
+  color: ${colors.fnPayableNameColor}
 }
 .icon {
-  font-size: 2.6rem;
+  font-size: 1.6rem;
+  position: relative;
 }
 .output {
   position: absolute;
   top: 5px;
-  right: 5px;
-  padding-left: 10px;
+  right: -25px;
   align-self: center;
+}
+.output i {
+  font-size: 1.2rem;
 }
 .valError {
   color: ${colors.valErrorColor};
@@ -21350,13 +21549,16 @@ button {
   display: grid;
   grid-template-columns: 100px auto;
   grid-template-rows: auto;
-  margin-bottom: 15px;
+  margin-bottom: 22px;
+  position: relative;
+  z-index: 3;
 }
 .inputParam {
   padding: ${colors.inputParamPadding};
   color: ${colors.inputParamColor};
   font-size: ${colors.inputParamFontSize};
   text-align: ${colors.inputParamTextAlign};
+  transition: color .6s ease-in-out;
 }
 .inputFields {
   position: relative;
@@ -21381,14 +21583,14 @@ button {
   color: ${colors.inputFieldPlaceholderColor};
 }
 .integerValue {
-  width: calc(100% - 42px);
+  width: calc(100% - 26px);
   font-size: ${colors.integerValueFontSize};
   color: ${colors.integerValueColor};
   background-color: ${colors.integerValueBackgroundColor};
   border-radius: ${colors.integerValueBorderRadius};
   border: ${colors.integerValueBorder};
   text-align: ${colors.integerValueTextAlign};
-  padding: 6px 30px 6px 12px;
+  padding: 6px 12px;
 }
 .integerValue::placeholder {
   color: ${colors.integerValuePlaceholderColor};
@@ -21401,6 +21603,9 @@ button {
   border-radius: 3px;
   grid-row: 2;
 }
+.topContainer:hover .integerSlider::-webkit-slider-runnable-track, .fnContainer:hover .integerSlider::-webkit-slider-runnable-track {
+  background-color: #6700FF;
+}
 /* track */
 .integerSlider::-webkit-slider-runnable-track {
   width: 100%;
@@ -21408,6 +21613,7 @@ button {
   background-color: ${colors.integerSliderBackgroundColor};
   border-radius: 3px;
   grid-row: 2;
+  transition: background-color .3s ease-in-out;
 }
 .integerSlider:active::-webkit-slider-runnable-track {
   background-color: ${colors.integerSliderFocusBackgroundColor};
@@ -21486,14 +21692,14 @@ input[type="range"]:focus::-ms-fill-upper {
   width: 100%;
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: auto 40px;
+  grid-template-rows: auto 30px;
   grid-column-gap: 5px;
   align-items: center;
 }
 .booleanField {
   position: relative;
   display: grid;
-  grid-template-columns: auto auto 30px;
+  grid-template-columns: repeat(2, auto);
   grid-template-rows: auto;
   grid-column-gap: 5px;
   align-items: center;
@@ -21551,18 +21757,65 @@ input[type="range"]:focus::-ms-fill-upper {
   margin-right: 15px;
 }
 .actions {
+  position: relative;
   text-align: right;
-  padding-bottom: 14px;
+  z-index: 3;
 }
 .expend {
   position: absolute;
   right: 5px;
-  top: -5px;
+  top: 3px;
 }
+.expend i {
+  transform: rotate(90deg);
+  margin-left: -15px;
+}
+.expend .expend {
+  animation: expendOff .3s ease-in forwards;
+}
+.expend .collapse {
+  animation: expendOn .3s ease-out forwards;
+}
+@-webkit-keyframes expendOn {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(90deg);
+  }
+}
+@keyframes expendOn {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(90deg);
+  }
+}
+@-webkit-keyframes expendOff {
+  0% {
+    transform: rotate(-90deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes expendOff {
+  0% {
+    transform: rotate(90deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
 .txReceipt {
   display: grid;
   grid-template: auto / 1fr;
   grid-row-gap: 20px;
+  position: relative;
+  z-index: 3;
 }
 .txReturnField {
 
@@ -21575,13 +21828,6 @@ input[type="range"]:focus::-ms-fill-upper {
   color: ${colors.txReturnValueColor};
   font-size: ${colors.txReturnValueFontSize};
   text-align: center;
-}
-.infoIcon {
-  text-align: right;
-}
-.infoIcon a {
-  font-size: 2.4rem;
-  color: #A0A0FF;
 }
 .inputArea {
   display: grid;
@@ -21603,6 +21849,9 @@ input[type="range"]:focus::-ms-fill-upper {
   text-align: center;
   align-self: center;
 }
+.inputsList {
+
+}
 @media (max-width: 640px) {
   .preview {
     max-width: 100%;
@@ -21619,7 +21868,7 @@ function inputStyle() {
 function hover () {
   return `
     cursor: pointer;
-    opacity: 0.6;
+    background-color: rgba(255,255,255, .15)
   `
 }
 
