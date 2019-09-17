@@ -1049,7 +1049,7 @@ input[type="range"]:focus::-ms-fill-upper {
 }
 @media (max-width: 640px) {
   .preview {
-    max-width: 100%;
+    width: 100%;
   }
 }
 `
