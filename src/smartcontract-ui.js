@@ -1,12 +1,15 @@
 const bel = require("bel")
 const csjs = require("csjs-inject")
+
+const getProvider = require('wallet')
+
 const ethers = require('ethers')
-const glossary = require('glossary')
 const loadingAnimation = require('loadingAnimation')
 const makeDeployReceipt = require('makeDeployReceipt')
 const getArgs = require('getArgs')
 const makeReturn = require('makeReturn')
 const shortenHexData = require('shortenHexData')
+
 const inputAddress = require("input-address")
 const inputArray = require("input-array")
 const inputInteger = require("input-integer")
@@ -14,66 +17,31 @@ const inputBoolean = require("input-boolean")
 const inputString = require("input-string")
 const inputByte = require("input-byte")
 const inputPayable = require("input-payable")
+
 const copy = require('copy-text-to-clipboard')
-const theme = require('theme')
-var colors = setTheme('darkTheme')
-// Styling variables
+const theme = require('../demo/node_modules/theme')
 
-var css
-var fonts = [ "https://use.fontawesome.com/releases/v5.8.2/css/all.css",
-  'https://fonts.googleapis.com/css?family=Nunito&display=swap']
-var fontAwesome = bel`<link href=${fonts[0]} rel='stylesheet' type='text/css'>`
-var overpassMono = bel`<link href=${fonts[1]} rel='stylesheet' type='text/css'>`
-var viewPort = bel`<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">`
-document.head.appendChild(viewPort)
-document.head.appendChild(fontAwesome)
-document.head.appendChild(overpassMono)
+const id = 'smartcontract-ui'
+var counter = 1
 
-// ===== Switch Themes =====
-function themeSwitch() {
-  return bel`
-  <section class=${css.themeSwitch}>
-    <span class="${css.colorplate} ${css.cubeWhite}" onclick=${() => { colors = setTheme('lightTheme'); console.log(colors) }}></span>
-    <span class="${css.colorplate} ${css.cubeDark}" onclick=${() => { colors = setTheme('darkTheme'); console.log(colors) }}></span>
-  </section>
-  `
-}
+module.exports = smartcontractui
 
-function setTheme(name) {
-  let colors = Object.assign({}, theme(name))
-  return colors
-}
+function smartcontractui ({ data, theme = {} }, protocol) {
+  const name = `${id}/${counter++}`
+  const css = theme.classes || classes
+  const vars = theme.variables || variables
 
+  const notify = protocol(msg => {
+    const { type, body } = msg
+    console.log(`[${name}] receives:`, msg)
+    if (type === 'theme') return updateTheme(body)
+  })
 
-/******************************************************************************
-  ETHERS
-******************************************************************************/
+  var result = data // compilation result metadata
+  var colors = vars
+  var provider
+  var contract
 
-var provider
-var contract
-
-async function getProvider() {
-  if (window.web3.currentProvider) {
-    try {
-      // Acccounts now exposed
-      provider = new ethers.providers.Web3Provider(window.web3.currentProvider)
-      // Request account access if needed
-      await ethereum.enable();
-    } catch (error) {
-      console.log(error)
-    }
-  } else {
-    window.open("https://metamask.io/")
-  }
-  return provider
-}
-
-/*--------------------
-      PAGE
---------------------*/
-module.exports = displayContractUI
-
-function displayContractUI(result) {   // compilation result metadata
   var opts = {
     metadata: {
       compiler: { version: result[0].compiler.version },
@@ -93,9 +61,11 @@ function displayContractUI(result) {   // compilation result metadata
       },
       sources: { '': result[0].sources.sourcecode }
     }
-}
+  }
+
+  var el
   if (!opts || !opts.metadata) {
-    return  bel`
+    el =  bel`
     <div class=${css.preview}>
       <div class=${css.error}>
         <div class=${css.errorTitle}>error <i class="${css.errorIcon} fa fa-exclamation-circle"></i></div>
@@ -219,6 +189,7 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     function functions (fn) {
+      const glossary = require('glossary')
       var theme = { classes: css }
       var label = fn.stateMutability
       var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><span class=${css.name}>${fn.name}</span></a>`
@@ -263,7 +234,8 @@ function displayContractUI(result) {   // compilation result metadata
           if (allArgs.overrides) { transaction = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
           else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
           let abi = solcMetadata.output.abi
-          loader.replaceWith(await makeReturn(contract, solcMetadata, provider, transaction, fnName))
+          const data = { contract, solcMetadata, provider, transaction, fnName }
+          loader.replaceWith(await makeReturn({ data }))
         } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
       } else {
         let deploy = document.querySelector("#publish")
@@ -341,13 +313,14 @@ function displayContractUI(result) {   // compilation result metadata
       }
     }
 
-// Create and deploy contract using WEB3
+    // Create and deploy contract using WEB3
     async function deployContract() {
       var theme = { classes: css }
       let abi = solcMetadata.output.abi
       let bytecode = opts.metadata.bytecode
       provider =  await getProvider()
       let signer = await provider.getSigner()
+
       var el = document.querySelector("[class^='ctor']")
       let factory = await new ethers.ContractFactory(abi, bytecode, signer)
       el.replaceWith(bel`<div class=${css.deploying}>${loadingAnimation(colors, 'Publishing to Ethereum network')}</div>`)
@@ -361,7 +334,8 @@ function displayContractUI(result) {   // compilation result metadata
         contract = instance
         let deployed = await contract.deployed()
         topContainer.innerHTML = ''
-        topContainer.appendChild(makeDeployReceipt(provider, contract))
+        const theme = { colors }
+        topContainer.appendChild(makeDeployReceipt({ provider, theme, contract }))
         activateSendTx(contract)
       } catch (e) {
         let loader = document.querySelector("[class^='deploying']")
@@ -390,8 +364,7 @@ function displayContractUI(result) {   // compilation result metadata
     </div>`
     topContainer.appendChild(ctor)
 
-    return bel`
-    <div class=${css.preview}>
+    el = bel`<div class=${css.preview}>
       <section class=${css.constructorFn}>
         <h1 class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
           ${metadata.constructorName}
@@ -402,50 +375,19 @@ function displayContractUI(result) {   // compilation result metadata
       <section class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</section>
     </div>`
   }
-}
 
-/******************************************************************************
-  CSS
-******************************************************************************/
-
-css = csjs`
-html {
-  font-size: 62.5%;
+  updateTheme(vars)
+  return el
+  function updateTheme (vars) {
+    // Object.keys(variables).forEach(name => {
+    console.log('@todo: fix `variables` below by removing all non-needed ones')
+    Object.keys(vars).forEach(name => {
+      el.style.setProperty(`--${name}`, vars[name])
+    })
+  }
 }
-body {
-  margin: 0;
-  background-color: ${colors.bodyBackgroundColor};
-  font-family: ${colors.bodyFont};
-  font-size: ${colors.bodyFontSize};
-  color: ${colors.bodyTextColor}
-}
-h1, h2, h3, h4, h5, h6 {
-  margin: 0;
-}
-.themeSwitch {
-  text-align: right;
-}
-button {
-  border: none;
-  background: none;
-  outline: none;
-}
+const classes = csjs`
 .button {
-}
-.colorplate {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  margin-left: 5px;
-  border: 1px solid #888;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.cubeWhite {
-  background-color: #fff;
-}
-.cubeDark {
-  background-color: #1D1D26;
 }
 .preview {
   max-width: 560px;
@@ -453,7 +395,7 @@ button {
   padding: 1% 2%;
 }
 .error {
-  border: 1px solid ${colors.violetRed};
+  border: 1px solid var(--violetRed);
   position: relative;
   padding: 1em;
 }
@@ -461,10 +403,10 @@ button {
   position: absolute;
   top: -14px;
   left: 20px;
-  background-color: ${colors.dark};
+  background-color: var(--dark);
   padding: 0 5px 0 5px;
   font-size: 1.3rem;
-  color: ${colors.violetRed};
+  color: var(--violetRed);
 }
 .errorIcon {
   font-size: 1.3rem;
@@ -472,7 +414,7 @@ button {
 .visible {
   display: block;
   border: 1px solid #1d1d26;
-  background-color: ${colors.visibleBackgroundColor};
+  background-color: var(--visibleBackgroundColor);
   padding: 22px 30px 10px 22px;
   border-radius: 4px;
   transform: scale(1);
@@ -496,8 +438,8 @@ button {
 .txReturnItem {
   margin: 0 0 1px 0;
   padding: 20px 0;
-  text-align: ${colors.txRetrunTextAlign};
-  background-color: ${colors.txReturnItemBackgroundColor}
+  text-align: var(--txRetrunTextAlign);
+  background-color: var(--txReturnItemBackgroundColor)
 }
 .txReturnItem .infoIcon {
   right: 6px;
@@ -509,7 +451,7 @@ button {
   font-size: 2rem;
   font-weight: bold;
   text-align: center;
-  color: ${colors.contractNameColor};
+  color: var(--contractNameColor);
   margin: 20px 0;
 }
 .contractName:hover {
@@ -522,11 +464,11 @@ button {
 .faIcon {
 }
 .name {
-  font-size: ${colors.nameFontSize};
+  font-size: var(--nameFontSize);
 }
 .stateMutability {
   margin-left: 5px;
-  color: ${colors.whiteSmoke};
+  color: var(--whiteSmoke);
   border-radius: 20px;
   padding: 1px;
   font-size: 1.4rem;
@@ -536,19 +478,19 @@ button {
 .functions {
 }
 .title {
-  font-size: ${colors.titleFontSize};
+  font-size: var(--titleFontSize);
   margin-bottom: 16px;
 }
 .deployTitle {
-  font-size: ${colors.deployTitleFontSize};
+  font-size: var(--deployTitleFontSize);
   background-color: transparent;
   padding: 0 5px 0 0;
   font-weight: 800;
 }
 .deploy {
-  color: ${colors.deployColor};
-  font-size: ${colors.deployFontSize};
-  background-color: ${colors.deployBackgroundColor};
+  color: var(--deployColor);
+  font-size: var(--deployFontSize);
+  background-color: var(--deployBackgroundColor);
   border-radius: 30px;
   padding: 10px 17px 10px 22px;
   position: absolute;
@@ -589,9 +531,9 @@ button {
   opacity: .6;
 }
 .send {
-  color: ${colors.sendColor};
-  font-size: ${colors.sendFontSize};
-  background-color: ${colors.sendBackgroundColor};
+  color: var(--sendColor);
+  font-size: var(--sendFontSize);
+  background-color: var(--sendBackgroundColor);
   padding: 10px 17px 10px 22px;
   border-radius: 30px;
   position: absolute;
@@ -649,10 +591,10 @@ button {
 .fnContainer {
   padding: 0px;
   margin-bottom: 20px;
-  border-radius: ${colors.fnContainerBorderRadius};
-  border: ${colors.fnContainerBorder};
-  background-color: ${colors.fnContainerBackgroundColor};
-  box-shadow: ${colors.fnContainerBoxShadow};
+  border-radius: var(--fnContainerBorderRadius);
+  border: var(--fnContainerBorder);
+  background-color: var(--fnContainerBackgroundColor);
+  box-shadow: var(--fnContainerBoxShadow);
 }
 .fnContainer .deploying {
   padding: 20px 14px 20px 20px;
@@ -664,9 +606,9 @@ button {
 }
 .topContainer {
   margin-bottom: 20px;
-  border-radius: ${colors.topContainerBorderRadius};
-  border: ${colors.topContainerBorder};
-  background: ${colors.topContainerBackgroundColor};
+  border-radius: var(--topContainerBorderRadius);
+  border: var(--topContainerBorder);
+  background: var(--topContainerBackgroundColor);
   padding: 22px 10px 12px 22px;
   transform: scale(1);
   -webkit-transition: transform .5s, border .5s ease-out;
@@ -686,7 +628,7 @@ button {
 .topContainer:before, .visible:before {
   content: '';
   display: block;
-  background: ${colors.cardHoverGradientBackground};
+  background: var(--cardHoverGradientBackground);
   position: absolute;
   width: 100%;
   height: 100%;
@@ -700,25 +642,25 @@ button {
   opacity: 1;
 }
 .topContainer:hover .inputParam, .fnContainer:hover .inputParam {
-  color: ${colors.inputParamColorHover};
+  color: var(--inputParamColorHover);
 }
 .topContainer:hover .txReceipt .txReturnValue {
-  color: ${colors.txReturnValueColorHover};
+  color: var(--txReturnValueColorHover);
 }
 .signature {
   
 }
 .pure {
-  color: ${colors.yellow};
+  color: var(--yellow);
 }
 .view .name {
-  color: ${colors.fnViewNameColor}
+  color: var(--fnViewNameColor)
 }
 .nonpayable .name {
-  color: ${colors.fnNonPayableNameColor}
+  color: var(--fnNonPayableNameColor)
 }
 .payable .name {
-  color: ${colors.fnPayableNameColor}
+  color: var(--fnPayableNameColor)
 }
 .icon {
   font-size: 1.6rem;
@@ -734,11 +676,11 @@ button {
   font-size: 1.2rem;
 }
 .valError {
-  color: ${colors.valErrorColor};
+  color: var(--valErrorColor);
   margin-right: 5px;
 }
 .valSuccess {
-  color: ${colors.valSuccessColor};
+  color: var(--valSuccessColor);
 }
 .inputContainer {
   display: grid;
@@ -749,10 +691,10 @@ button {
   z-index: 3;
 }
 .inputParam {
-  padding: ${colors.inputParamPadding};
-  color: ${colors.inputParamColor};
-  font-size: ${colors.inputParamFontSize};
-  text-align: ${colors.inputParamTextAlign};
+  padding: var(--inputParamPadding);
+  color: var(--inputParamColor);
+  font-size: var(--inputParamFontSize);
+  text-align: var(--inputParamTextAlign);
   transition: color .6s ease-in-out;
 }
 .inputFields {
@@ -765,30 +707,30 @@ button {
 }
 .inputField {
   font-family: 'Nunito', sans-serif;
-  font-size: ${colors.inputFieldFontSize};
-  color: ${colors.inputFieldColor};
-  background-color: ${colors.inputFieldBackgroundColor};
-  text-align: ${colors.inputFieldTextAlign};
+  font-size: var(--inputFieldFontSize);
+  color: var(--inputFieldColor);
+  background-color: var(--inputFieldBackgroundColor);
+  text-align: var(--inputFieldTextAlign);
   padding: 6px 28px 6px 12px;
-  border-radius: ${colors.inputFieldBorderRadius};
-  border: ${colors.inputFieldBorder};
+  border-radius: var(--inputFieldBorderRadius);
+  border: var(--inputFieldBorder);
   width: calc(100% - 40px)
 }
 .inputField::placeholder {
-  color: ${colors.inputFieldPlaceholderColor};
+  color: var(--inputFieldPlaceholderColor);
 }
 .integerValue {
   width: calc(100% - 26px);
-  font-size: ${colors.integerValueFontSize};
-  color: ${colors.integerValueColor};
-  background-color: ${colors.integerValueBackgroundColor};
-  border-radius: ${colors.integerValueBorderRadius};
-  border: ${colors.integerValueBorder};
-  text-align: ${colors.integerValueTextAlign};
+  font-size: var(--integerValueFontSize);
+  color: var(--integerValueColor);
+  background-color: var(--integerValueBackgroundColor);
+  border-radius: var(--integerValueBorderRadius);
+  border: var(--integerValueBorder);
+  text-align: var(--integerValueTextAlign);
   padding: 6px 12px;
 }
 .integerValue::placeholder {
-  color: ${colors.integerValuePlaceholderColor};
+  color: var(--integerValuePlaceholderColor);
 }
 .integerSlider {
   -webkit-appearance: none;
@@ -805,18 +747,18 @@ button {
 .integerSlider::-webkit-slider-runnable-track {
   width: 100%;
   height: 6px;
-  background-color: ${colors.integerSliderBackgroundColor};
+  background-color: var(--integerSliderBackgroundColor);
   border-radius: 3px;
   grid-row: 2;
   transition: background-color .3s ease-in-out;
 }
 .integerSlider:active::-webkit-slider-runnable-track {
-  background-color: ${colors.integerSliderFocusBackgroundColor};
+  background-color: var(--integerSliderFocusBackgroundColor);
 }
 .integerSlider::-moz-range-track {
   width: 100%;
   height: 6px;
-  background-color: ${colors.integerSliderBackgroundColor};
+  background-color: var(--integerSliderBackgroundColor);
   border-radius: 3px;
   cursor: pointer;
 }
@@ -829,15 +771,15 @@ input[type="range"]::-ms-track {
   color: transparent;
 }
 input[type="range"]::-ms-fill-lower {
-  background: ${colors.integerSliderBackgroundColor};
+  background: var(--integerSliderBackgroundColor);
 }
 
 input[type="range"]:focus::-ms-fill-lower {
-  background: ${colors.integerSliderFocusBackgroundColor};
+  background: var(--integerSliderFocusBackgroundColor);
 }
 
 input[type="range"]::-ms-fill-upper {
-  background: ${colors.integerSliderBackgroundColor};
+  background: var(--integerSliderBackgroundColor);
 }
 
 input[type="range"]:focus::-ms-fill-upper {
@@ -848,7 +790,7 @@ input[type="range"]:focus::-ms-fill-upper {
   -webkit-appearance: none;
   width: 16px;
   height: 16px;
-  background-color: ${colors.integerThumbBackgroundColor};
+  background-color: var(--integerThumbBackgroundColor);
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(0, 0, 0, .3);
   margin-top: -6px;
@@ -857,7 +799,7 @@ input[type="range"]:focus::-ms-fill-upper {
 .integerSlider::-moz-range-thumb {
   width: 16px;
   height: 16px;
-  background-color: ${colors.integerThumbBackgroundColor};
+  background-color: var(--integerThumbBackgroundColor);
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(0, 0, 0, .3);
   cursor: pointer;
@@ -865,7 +807,7 @@ input[type="range"]:focus::-ms-fill-upper {
 .integerSlider::-ms-range-thumb {
   width: 16px;
   height: 16px;
-  background-color: ${colors.integerThumbBackgroundColor};
+  background-color: var(--integerThumbBackgroundColor);
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(0, 0, 0, .3);
   margin-top: -2px;
@@ -903,21 +845,21 @@ input[type="range"]:focus::-ms-fill-upper {
   display: inline-grid;
   justify-content: center;
   width: calc(100% - 20px);
-  font-size: ${colors.booleanFieldFontSize};
-  color: ${colors.booleanFieldColor};
-  background-color: ${colors.booleanFieldBackgroundColor};
+  font-size: var(--booleanFieldFontSize);
+  color: var(--booleanFieldColor);
+  background-color: var(--booleanFieldBackgroundColor);
   padding: 6px 10px;
   border-right: none;
   border-radius: 2px;
   cursor: pointer;
 }
 .booleanField .true[data-state='active'] {
-  color: ${colors.booleanFieldActiveColor};
-  background-color: ${colors.booleanFieldTruedBackgroundColor};
+  color: var(--booleanFieldActiveColor);
+  background-color: var(--booleanFieldTruedBackgroundColor);
 }
 .booleanField .false[data-state='active'] {
-  color: ${colors.booleanFieldActiveColor};
-  background-color: ${colors.booleanFieldFalsedBackgroundColor};
+  color: var(--booleanFieldActiveColor);
+  background-color: var(--booleanFieldFalsedBackgroundColor);
 }
 .stringField, .byteField, .addressField {
   position: relative;
@@ -928,8 +870,8 @@ input[type="range"]:focus::-ms-fill-upper {
 .keyField {
   ${inputStyle()}
   border-right: none;
-  background-color: ${colors.aquaMarine};
-  border-color: ${colors.whiteSmoke};
+  background-color: var(--aquaMarine);
+  border-color: var(--whiteSmoke);
 }
 .false {
 }
@@ -940,9 +882,9 @@ input[type="range"]:focus::-ms-fill-upper {
   grid-row-gap: 5px;
 }
 .arrayPlusMinus {
-  text-align: ${colors.arrayPlusMinusTextAlign};
-  font-size: ${colors.arrayPlusMinusFontSize};
-  color: ${colors.arrayPlusMinusColor};
+  text-align: var(--arrayPlusMinusTextAlign);
+  font-size: var(--arrayPlusMinusFontSize);
+  color: var(--arrayPlusMinusColor);
 }
 .arrayPlus {
   cursor: pointer;
@@ -1016,12 +958,12 @@ input[type="range"]:focus::-ms-fill-upper {
 
 }
 .txReturnTitle {
-  color: ${colors.txReturnTitleColor};
-  font-size: ${colors.txReturnTitleFontSize};
+  color: var(--txReturnTitleColor);
+  font-size: var(--txReturnTitleFontSize);
 }
 .txReturnValue {
-  color: ${colors.txReturnValueColor};
-  font-size: ${colors.txReturnValueFontSize};
+  color: var(--txReturnValueColor);
+  font-size: var(--txReturnValueFontSize);
   text-align: center;
 }
 .inputArea {
@@ -1030,17 +972,17 @@ input[type="range"]:focus::-ms-fill-upper {
   grid-column-gap: 5px;
 }
 .currency {
-  font-family: ${colors.bodyFont};
-  border-radius: ${colors.currencyBorderRadius};
-  border: ${colors.currencyBorder};
+  font-family: var(--bodyFont);
+  border-radius: var(--currencyBorderRadius);
+  border: var(--currencyBorder);
   padding: 5px 7px;
-  color: ${colors.currencyColor};
-  background-color: ${colors.currencyBackgroundColor};
-  font-size: ${colors.currencyFontSize};
+  color: var(--currencyColor);
+  background-color: var(--currencyBackgroundColor);
+  font-size: var(--currencyFontSize);
 }
 .ethIcon {
-  color: ${colors.ethIconColor};
-  font-size: ${colors.ethIconFontSize};
+  color: var(--ethIconColor);
+  font-size: var(--ethIconFontSize);
   text-align: center;
   align-self: center;
 }
@@ -1051,18 +993,106 @@ input[type="range"]:focus::-ms-fill-upper {
   .preview {
     width: 100%;
   }
-}
-`
-
+}`
 function inputStyle() {
   return `
-    background-color: ${colors.darkSmoke};
+    background-color: var(--darkSmoke);
   `
 }
-
 function hover () {
   return `
     cursor: pointer;
     background-color: rgba(255,255,255, .15)
   `
+}
+const variables = { // defaults
+  darkSmoke: '',
+  bodyBackgroundColor: '',
+  bodyFont: '',
+  bodyFontSize: '',
+  bodyTextColor: '',
+  violetRed: '',
+  dark: '',
+  violetRed: '',
+  visibleBackgroundColor: '',
+  txRetrunTextAlign: '',
+  txReturnItemBackgroundColor: '',
+  contractNameColor: '',
+  nameFontSize: '',
+  whiteSmoke: '',
+  titleFontSize: '',
+  deployTitleFontSize: '',
+  deployColor: '',
+  deployFontSize: '',
+  deployBackgroundColor: '',
+  sendColor: '',
+  sendFontSize: '',
+  sendBackgroundColor: '',
+  fnContainerBorderRadius: '',
+  fnContainerBorder: '',
+  fnContainerBackgroundColor: '',
+  fnContainerBoxShadow: '',
+  topContainerBorderRadius: '',
+  topContainerBorder: '',
+  topContainerBackgroundColor: '',
+  cardHoverGradientBackground: '',
+  inputParamColorHover: '',
+  txReturnValueColorHover: '',
+  yellow: '',
+  fnViewNameColor: '',
+  fnNonPayableNameColor: '',
+  fnPayableNameColor: '',
+  valErrorColor: '',
+  valSuccessColor: '',
+  inputParamPadding: '',
+  inputParamColor: '',
+  inputParamFontSize: '',
+  inputParamTextAlign: '',
+  inputFieldFontSize: '',
+  inputFieldColor: '',
+  inputFieldBackgroundColor: '',
+  inputFieldTextAlign: '',
+  inputFieldBorderRadius: '',
+  inputFieldBorder: '',
+  inputFieldPlaceholderColor: '',
+  integerValueFontSize: '',
+  integerValueColor: '',
+  integerValueBackgroundColor: '',
+  integerValueBorderRadius: '',
+  integerValueBorder: '',
+  integerValueTextAlign: '',
+  integerValuePlaceholderColor: '',
+  integerSliderBackgroundColor: '',
+  integerSliderFocusBackgroundColor: '',
+  integerSliderBackgroundColor: '',
+  integerSliderBackgroundColor: '',
+  integerSliderFocusBackgroundColor: '',
+  integerSliderBackgroundColor: '',
+  integerThumbBackgroundColor: '',
+  integerThumbBackgroundColor: '',
+  integerThumbBackgroundColor: '',
+  booleanFieldFontSize: '',
+  booleanFieldColor: '',
+  booleanFieldBackgroundColor: '',
+  booleanFieldActiveColor: '',
+  booleanFieldTruedBackgroundColor: '',
+  booleanFieldActiveColor: '',
+  booleanFieldFalsedBackgroundColor: '',
+  aquaMarine: '',
+  whiteSmoke: '',
+  arrayPlusMinusTextAlign: '',
+  arrayPlusMinusFontSize: '',
+  arrayPlusMinusColor: '',
+  txReturnTitleColor: '',
+  txReturnTitleFontSize: '',
+  txReturnValueColor: '',
+  txReturnValueFontSize: '',
+  bodyFont: '',
+  currencyBorderRadius: '',
+  currencyBorder: '',
+  currencyColor: '',
+  currencyBackgroundColor: '',
+  currencyFontSize: '',
+  ethIconColor: '',
+  ethIconFontSize: '',
 }
