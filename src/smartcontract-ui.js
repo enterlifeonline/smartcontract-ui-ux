@@ -62,7 +62,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
   const ctor = bel`<div class="${css.ctor}">
     ${metadata.constructorInput}
     <div class=${css.actions}>
-      <button id="publish" class="${css.button} ${css.deploy}" onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
+      <button id="publish" class="${css.button} ${css.deploy}" onclick=${deployContract} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
         PUBLISH <i class="${css.icon} fa fa-arrow-right"></i>
       </button>
     </div>
@@ -228,7 +228,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
         else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
         let abi = solcMetadata.output.abi
         const data = { contract, solcMetadata, provider, transaction, fnName }
-        loader.replaceWith(await makeReturn({ data }))
+        loader.replaceWith(await makeReturn({ data }, () => {}))
       } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
     } else {
       let deploy = document.querySelector("#publish")
@@ -312,7 +312,8 @@ function smartcontractui ({ data, theme = {} }, protocol) {
 
     var el = document.querySelector("[class^='ctor']")
     let factory = await new ethers.ContractFactory(abi, bytecode, signer)
-    el.replaceWith(bel`<div class=${css.deploying}>${loadingAnimation(colors, 'Publishing to Ethereum network')}</div>`)
+    const loader = bel`<div class=${css.deploying}>${loadingAnimation(colors, 'Publishing to Ethereum network')}</div>`
+    el.replaceWith(loader)
     try {
       var allArgs = getArgs(el, 'inputContainer')
       let args = allArgs.args
@@ -323,11 +324,13 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       contract = instance
       let deployed = await contract.deployed()
       topContainer.innerHTML = ''
-      const theme = { colors }
-      topContainer.appendChild(makeDeployReceipt({ provider, theme, contract }))
+      const theme = { variables: colors }
+      const data = { provider, contract }
+      topContainer.appendChild(makeDeployReceipt({ data, theme }, notify => msg => {
+        console.log(`[${name}] receives:`, msg)
+      }))
       activateSendTx(contract)
     } catch (e) {
-      let loader = document.querySelector("[class^='deploying']")
       loader.replaceWith(ctor)
     }
   }
@@ -388,7 +391,7 @@ const classes = csjs`
   overflow-y: auto;
 }
 .deploying {
-
+  margin: 0;
 }
 .txReturnItem {
   margin: 0 0 1px 0;

@@ -129,7 +129,7 @@ button {
   height: 100vh;
   box-sizing: border-box;
 }`
-},{"../":164,"bel":24,"contracts":16,"csjs-inject":31,"get-compiler-version":17,"solc-js":100,"theme":19,"theme-switcher":18}],2:[function(require,module,exports){
+},{"../":163,"bel":24,"contracts":16,"csjs-inject":31,"get-compiler-version":17,"solc-js":100,"theme":19,"theme-switcher":18}],2:[function(require,module,exports){
 module.exports = `
 pragma solidity ^0.4.17;
 
@@ -22350,37 +22350,6 @@ function getAmount (currency, amount) {
 }
 
 },{"bignumber.js":25,"ethers":49}],152:[function(require,module,exports){
-const ethers = require('ethers')
-
-module.exports = decodeReturnData
-
-function decodeReturnData (txReturn, txTypes) {
-  var result
-  if (Array.isArray(txReturn)) {  // recursive case
-    result = txReturn.map((x, i) => decodeReturnData(x, getTypes(txTypes, i)))
-    return result
-  } else { // atomic case
-    result = decode(txReturn, getTypes(txTypes, 0))
-    return result
-  }
-}
-
-function decode (txReturn, txType) {
-  var type = txType.type
-  if (type.includes('int')) return txReturn.toString()
-  else return txReturn
-}
-
-function getTypes(types, i) {
-  if (types.components) types = types.components
-  else if (Array.isArray(types)) {
-    if (types[i].type) types = types[i]
-  }
-  else types = types
-  return types
-}
-
-},{"ethers":49}],153:[function(require,module,exports){
 const bigNumber = require('bignumber.js')
 const ethers = require('ethers')
 const convertToEther = require('convertToEther')
@@ -22497,7 +22466,7 @@ function getArgument(el, val) {
   return argument
 }
 
-},{"bignumber.js":25,"convertToEther":151,"ethers":49}],154:[function(require,module,exports){
+},{"bignumber.js":25,"convertToEther":151,"ethers":49}],153:[function(require,module,exports){
 module.exports = getDate
 
 function getDate () {
@@ -22520,33 +22489,42 @@ function getDate () {
 
 }
 
-},{}],155:[function(require,module,exports){
+},{}],154:[function(require,module,exports){
 const ethers = require('ethers')
-const decodeReturnData = require('decodeReturnData')
 
 module.exports = getReturnData
 
 function getReturnData (opts) {
   var iface = new ethers.utils.Interface(opts.solcMetadata.output.abi)
   var fun = opts.contract.interface.functions[opts.fnName]
-  var txReturn
-  var ifaceTypes
-
   if (opts.tag === 'input') {
-    ifaceTypes =  fun.inputs
-    var tx = { data: opts.data }
-    txReturn = iface.parseTransaction(tx).args
+    const txReturn = iface.parseTransaction({ data: opts.data }).args
+    return decodeReturnData(txReturn, fun.inputs)
   }
-  else if (opts.tag === 'output') {
-    ifaceTypes =  fun.outputs
-    txReturn = opts.transaction
-  }
-
-  var decodedData = decodeReturnData(txReturn, ifaceTypes)
-  return decodedData
+  if (opts.tag === 'output') return decodeReturnData(opts.transaction, fun.outputs)
 }
 
-},{"decodeReturnData":152,"ethers":49}],156:[function(require,module,exports){
+function decodeReturnData (txReturn, txTypes) {
+  if (Array.isArray(txReturn)) {  // recursive case
+    return txReturn.map((x, i) => decodeReturnData(x, getTypes(txTypes, i)))
+  } else { // atomic case
+    return decode(txReturn, getTypes(txTypes, 0))
+  }
+}
+
+function decode (txReturn, txType) {
+  var type = txType.type
+  if (type.includes('int')) return Number(txReturn.toString())
+  else return txReturn
+}
+
+function getTypes(types, i) {
+  if (types.components) return types.components
+  if (Array.isArray(types) && types[i].type) return types[i]
+  return types
+}
+
+},{"ethers":49}],155:[function(require,module,exports){
 module.exports = word => glossary[word]
 
 var glossary = {
@@ -22557,7 +22535,7 @@ var glossary = {
   undefined: `Type of this function is not defined.`
 }
 
-},{}],157:[function(require,module,exports){
+},{}],156:[function(require,module,exports){
 module.exports = patchResult
 
 function patchResult (result) {
@@ -22584,7 +22562,7 @@ function patchResult (result) {
   }
 }
 
-},{}],158:[function(require,module,exports){
+},{}],157:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require("csjs-inject")
 
@@ -22701,7 +22679,7 @@ function loadingAnimation (colors, text) {
   `
 }
 
-},{"bel":24,"csjs-inject":31}],159:[function(require,module,exports){
+},{"bel":24,"csjs-inject":31}],158:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require('csjs-inject')
 
@@ -22724,6 +22702,7 @@ function makeDeployReceipt ({ data, theme = {} }, protocol) {
 
   const network = data.provider._network.name
   const creator = data.contract.deployTransaction.creates
+  const hash = data.contract.deployTransaction.hash
   const from = data.contract.deployTransaction.from
   const css = theme.classes || classes
   const vars = theme.variables || variables
@@ -22743,7 +22722,7 @@ function makeDeployReceipt ({ data, theme = {} }, protocol) {
     </div>
     ${field1}
     ${field2}
-    ${moreInfo(provider._network.name, contract.deployTransaction.hash)}
+    ${moreInfo(network, hash)}
   </div>`
 
   field1.onclick = ()=> copy(creator)
@@ -22751,7 +22730,7 @@ function makeDeployReceipt ({ data, theme = {} }, protocol) {
   updateTheme(variables)
 
   return el
-  function updateTheme (variables) {
+  function updateTheme (vars) {
     Object.keys(variables).forEach(name => {
       el.style.setProperty(`--${name}`, vars[name])
     })
@@ -22794,7 +22773,7 @@ const classes = csjs`
 .date {
   margin: 0;
 }`
-},{"bel":24,"copy-text-to-clipboard":28,"csjs-inject":31,"getDate":154,"moreInfo":161}],160:[function(require,module,exports){
+},{"bel":24,"copy-text-to-clipboard":28,"csjs-inject":31,"getDate":153,"moreInfo":160}],159:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require('csjs-inject')
 
@@ -22875,7 +22854,7 @@ const classes = csjs`
 .txReturnItem:hover .txReturnValue {
   color: rgba(255,255,255, 1);
 }`
-},{"bel":24,"csjs-inject":31,"getReturnData":155,"moreInfo":161}],161:[function(require,module,exports){
+},{"bel":24,"csjs-inject":31,"getReturnData":154,"moreInfo":160}],160:[function(require,module,exports){
 const bel = require('bel')
 const csjs = require('csjs-inject')
 
@@ -22905,7 +22884,7 @@ const classes = csjs`
   color: white;
   opacity: 0.6;
 }`
-},{"bel":24,"csjs-inject":31}],162:[function(require,module,exports){
+},{"bel":24,"csjs-inject":31}],161:[function(require,module,exports){
 module.exports = shortenHexData
 
 function shortenHexData (data) {
@@ -22915,7 +22894,9 @@ function shortenHexData (data) {
   return data.slice(0, 10) + '...' + data.slice(len - 10, len)
 }
 
-},{}],163:[function(require,module,exports){
+},{}],162:[function(require,module,exports){
+const ethers = require('ethers')
+
 module.exports = getProvider
 
 async function getProvider () {
@@ -22932,7 +22913,7 @@ async function getProvider () {
   return provider
 }
 
-},{}],164:[function(require,module,exports){
+},{"ethers":49}],163:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require("csjs-inject")
 
@@ -22997,7 +22978,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
   const ctor = bel`<div class="${css.ctor}">
     ${metadata.constructorInput}
     <div class=${css.actions}>
-      <button id="publish" class="${css.button} ${css.deploy}" onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
+      <button id="publish" class="${css.button} ${css.deploy}" onclick=${deployContract} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
         PUBLISH <i class="${css.icon} fa fa-arrow-right"></i>
       </button>
     </div>
@@ -23163,7 +23144,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
         else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
         let abi = solcMetadata.output.abi
         const data = { contract, solcMetadata, provider, transaction, fnName }
-        loader.replaceWith(await makeReturn({ data }))
+        loader.replaceWith(await makeReturn({ data }, () => {}))
       } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
     } else {
       let deploy = document.querySelector("#publish")
@@ -23247,7 +23228,8 @@ function smartcontractui ({ data, theme = {} }, protocol) {
 
     var el = document.querySelector("[class^='ctor']")
     let factory = await new ethers.ContractFactory(abi, bytecode, signer)
-    el.replaceWith(bel`<div class=${css.deploying}>${loadingAnimation(colors, 'Publishing to Ethereum network')}</div>`)
+    const loader = bel`<div class=${css.deploying}>${loadingAnimation(colors, 'Publishing to Ethereum network')}</div>`
+    el.replaceWith(loader)
     try {
       var allArgs = getArgs(el, 'inputContainer')
       let args = allArgs.args
@@ -23258,11 +23240,13 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       contract = instance
       let deployed = await contract.deployed()
       topContainer.innerHTML = ''
-      const theme = { colors }
-      topContainer.appendChild(makeDeployReceipt({ provider, theme, contract }))
+      const theme = { variables: colors }
+      const data = { provider, contract }
+      topContainer.appendChild(makeDeployReceipt({ data, theme }, notify => msg => {
+        console.log(`[${name}] receives:`, msg)
+      }))
       activateSendTx(contract)
     } catch (e) {
-      let loader = document.querySelector("[class^='deploying']")
       loader.replaceWith(ctor)
     }
   }
@@ -23323,7 +23307,7 @@ const classes = csjs`
   overflow-y: auto;
 }
 .deploying {
-
+  margin: 0;
 }
 .txReturnItem {
   margin: 0 0 1px 0;
@@ -23986,4 +23970,4 @@ const variables = { // defaults
   ethIconColor: '',
   ethIconFontSize: '',
 }
-},{"../demo/node_modules/theme":19,"bel":24,"copy-text-to-clipboard":28,"csjs-inject":31,"ethers":49,"getArgs":153,"glossary":156,"helper/patch-result":157,"input-address":54,"input-array":55,"input-boolean":56,"input-byte":69,"input-integer":70,"input-payable":71,"input-string":72,"loadingAnimation":158,"makeDeployReceipt":159,"makeReturn":160,"shortenHexData":162,"wallet":163}]},{},[1]);
+},{"../demo/node_modules/theme":19,"bel":24,"copy-text-to-clipboard":28,"csjs-inject":31,"ethers":49,"getArgs":152,"glossary":155,"helper/patch-result":156,"input-address":54,"input-array":55,"input-boolean":56,"input-byte":69,"input-integer":70,"input-payable":71,"input-string":72,"loadingAnimation":157,"makeDeployReceipt":158,"makeReturn":159,"shortenHexData":161,"wallet":162}]},{},[1]);
