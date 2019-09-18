@@ -129,7 +129,7 @@ button {
   height: 100vh;
   box-sizing: border-box;
 }`
-},{"../":163,"bel":24,"contracts":16,"csjs-inject":31,"get-compiler-version":17,"solc-js":100,"theme":19,"theme-switcher":18}],2:[function(require,module,exports){
+},{"../":164,"bel":24,"contracts":16,"csjs-inject":31,"get-compiler-version":17,"solc-js":100,"theme":19,"theme-switcher":18}],2:[function(require,module,exports){
 module.exports = `
 pragma solidity ^0.4.17;
 
@@ -22558,6 +22558,33 @@ var glossary = {
 }
 
 },{}],157:[function(require,module,exports){
+module.exports = patchResult
+
+function patchResult (result) {
+  console.log('@todo: update to new solc-js from @alincode')
+  return {
+    metadata: {
+      compiler: { version: result[0].compiler.version },
+      language: result[0].compiler.language,
+      output: {
+        abi: result[0].abi,
+        devdoc: result[0].metadata.devdoc,
+        userdoc: result[0].metadata.userdoc
+      },
+      bytecode: result[0].binary.bytecodes.bytecode,
+      settings: {
+        compilationTarget: { '': result[0].sources.compilationTarget },
+        evmVersion: result[0].compiler.evmVersion,
+        libraries: result[0].sources.libraries,
+        optimizer: { enabled: result[0].compiler.optimizer, runs: result[0].compiler.runs },
+        remapings: result[0].sources.remappings
+      },
+      sources: { '': result[0].sources.sourcecode }
+    }
+  }
+}
+
+},{}],158:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require("csjs-inject")
 
@@ -22674,7 +22701,7 @@ function loadingAnimation (colors, text) {
   `
 }
 
-},{"bel":24,"csjs-inject":31}],158:[function(require,module,exports){
+},{"bel":24,"csjs-inject":31}],159:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require('csjs-inject')
 
@@ -22767,7 +22794,7 @@ const classes = csjs`
 .date {
   margin: 0;
 }`
-},{"bel":24,"copy-text-to-clipboard":28,"csjs-inject":31,"getDate":154,"moreInfo":160}],159:[function(require,module,exports){
+},{"bel":24,"copy-text-to-clipboard":28,"csjs-inject":31,"getDate":154,"moreInfo":161}],160:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require('csjs-inject')
 
@@ -22848,7 +22875,7 @@ const classes = csjs`
 .txReturnItem:hover .txReturnValue {
   color: rgba(255,255,255, 1);
 }`
-},{"bel":24,"csjs-inject":31,"getReturnData":155,"moreInfo":160}],160:[function(require,module,exports){
+},{"bel":24,"csjs-inject":31,"getReturnData":155,"moreInfo":161}],161:[function(require,module,exports){
 const bel = require('bel')
 const csjs = require('csjs-inject')
 
@@ -22878,7 +22905,7 @@ const classes = csjs`
   color: white;
   opacity: 0.6;
 }`
-},{"bel":24,"csjs-inject":31}],161:[function(require,module,exports){
+},{"bel":24,"csjs-inject":31}],162:[function(require,module,exports){
 module.exports = shortenHexData
 
 function shortenHexData (data) {
@@ -22888,7 +22915,7 @@ function shortenHexData (data) {
   return data.slice(0, 10) + '...' + data.slice(len - 10, len)
 }
 
-},{}],162:[function(require,module,exports){
+},{}],163:[function(require,module,exports){
 module.exports = getProvider
 
 async function getProvider () {
@@ -22905,11 +22932,13 @@ async function getProvider () {
   return provider
 }
 
-},{}],163:[function(require,module,exports){
+},{}],164:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require("csjs-inject")
 
 const getProvider = require('wallet')
+
+const patchResult = require('helper/patch-result')
 
 const ethers = require('ethers')
 const loadingAnimation = require('loadingAnimation')
@@ -22945,344 +22974,46 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     if (type === 'theme') return updateTheme(body)
   })
 
-  var result = data // compilation result metadata
-  var colors = vars
+  const opts = patchResult(data) // compilation result metadata
+
+  const colors = vars
   var provider
   var contract
 
-  var opts = {
-    metadata: {
-      compiler: { version: result[0].compiler.version },
-      language: result[0].compiler.language,
-      output: {
-        abi: result[0].abi,
-        devdoc: result[0].metadata.devdoc,
-        userdoc: result[0].metadata.userdoc
-      },
-      bytecode: result[0].binary.bytecodes.bytecode,
-      settings: {
-        compilationTarget: { '': result[0].sources.compilationTarget },
-        evmVersion: result[0].compiler.evmVersion,
-        libraries: result[0].sources.libraries,
-        optimizer: { enabled: result[0].compiler.optimizer, runs: result[0].compiler.runs },
-        remapings: result[0].sources.remappings
-      },
-      sources: { '': result[0].sources.sourcecode }
-    }
-  }
+  if (!opts || !opts.metadata) return notify({ type: 'error', body: opts })
+  if (Array.isArray(opts.metadata)) return notify({ type: 'error', body: opts })
 
-  var el
-  if (!opts || !opts.metadata) {
-    el =  bel`
-    <div class=${css.preview}>
-      <div class=${css.error}>
-        <div class=${css.errorTitle}>error <i class="${css.errorIcon} fa fa-exclamation-circle"></i></div>
-        ${opts}
-      </div>
+  const solcMetadata = opts.metadata
+  const metadata = {
+    compiler: solcMetadata.compiler.version,
+    compilationTarget: solcMetadata.settings.compilationTarget,
+    constructorName: getConstructorName(),
+    constructorInput: getConstructorInput(),
+    functions: getContractFunctions()
+  }
+  const sorted = sort(metadata.functions)
+
+  const topContainer = bel`<section class=${css.topContainer}></section>`
+  const ctor = bel`<div class="${css.ctor}">
+    ${metadata.constructorInput}
+    <div class=${css.actions}>
+      <button id="publish" class="${css.button} ${css.deploy}" onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
+        PUBLISH <i class="${css.icon} fa fa-arrow-right"></i>
+      </button>
     </div>
-    `
-  }
+  </div>`
+  topContainer.appendChild(ctor)
 
-  if (!Array.isArray(opts.metadata)) {
-    var solcMetadata = opts.metadata
-    function getConstructorName() {
-      var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
-      return solcMetadata.settings.compilationTarget[file]
-    }
-
-    function getConstructorInput() {
-      var payable = false
-      var inputs = solcMetadata.output.abi.map(fn => {
-        if (fn.type === "constructor") {
-          if (fn.stateMutability === 'payable') payable = true
-          return treeForm(fn.inputs)
-        }
-      })
-      if (payable === true) inputs.unshift(inputPayable('payable'))
-      return inputs
-    }
-
-    function getContractFunctions() {
-      return solcMetadata.output.abi.map(x => {
-        var obj = {}
-        obj.name = x.name
-        obj.type = x.type
-        obj.inputs = getAllInputs(x)
-        obj.outputs = getAllOutputs(x)
-        obj.stateMutability = x.stateMutability
-        return obj
-      })
-    }
-
-    function getAllInputs(fn) {
-      var inputs = []
-      if (fn.inputs) {
-        return treeForm(fn.inputs)
-      }
-    }
-
-    function getAllOutputs(fn) {
-      var outputs = []
-      if (fn.outputs) {
-        return treeForm(fn.outputs)
-      }
-    }
-
-    function treeForm(data) {
-      return data.map(x => {
-        if (x.components) {
-          return bel`<li><div>${x.name} (${x.type})</div><ul>${treeForm(x.components)}</ul></li>`
-        }
-        if (!x.components) {
-          return generateInputContainer(x)
-        }
-      })
-    }
-
-    var metadata = {
-      compiler: solcMetadata.compiler.version,
-      compilationTarget: solcMetadata.settings.compilationTarget,
-      constructorName: getConstructorName(),
-      constructorInput: getConstructorInput(),
-      functions: getContractFunctions()
-    }
-
-    var sorted = sort(metadata.functions)
-    function sort (functions) {
-      return functions.filter(x => x.type === 'function').sort((a, b) => type2num(a) - type2num(b))
-      function type2num ({ stateMutability: sm }) {
-        if (sm === 'view') return 1
-        if (sm === 'nonpayable') return 2
-        if (sm === 'pure') return 3
-        if (sm === 'payable') return 4
-        if (sm === undefined) return 5
-      }
-    }
-
-    function generateInputContainer (field) {
-      var theme = { classes: css, colors}
-      var name = field.name
-      var type = field.type
-      var inputField = getInputField( {theme, type, cb})
-      var inputContainer = bel`
-        <div class=${css.inputContainer}>
-          <label class=${css.inputParam} title="data type: ${type}">${name || 'key'}</label>
-          <div class=${css.inputFields}>${inputField}</div>
-        </div>`
-      return inputContainer
-      function cb (msg, el, value) {
-        var oldOutput = el.parentNode.querySelector("[class^='output']")
-        var output = oldOutput ? oldOutput : output = bel`<span class=${css.output}></span>`
-        output.innerHTML = ""
-        output.innerHTML = msg ? `<span class=${css.valError} title="${msg}"><i class="fa fa-exclamation"></i></span>` : `<span class=${css.valSuccess} title="The value is valid."><i class="fa fa-check"></i></span>`
-        el.parentNode.appendChild(output)
-      }
-    }
-
-    function getInputField ({ theme, type, cb}) {
-      var field
-      if ((type.search(/\]/) != -1)) {
-        var arrayInfo = type.split('[')[1]
-        var digit = arrayInfo.search(/\d/)
-        field = inputArray({ theme, type, cb })
-      } else {
-        if ((type.search(/\buint/) != -1) || (type.search(/\bint/) != -1)) field = inputInteger({ theme, type, cb })
-        if (type.search(/\bbyte/) != -1) field = inputByte({ theme, type, cb })
-        if (type.search(/\bstring/) != -1) field = inputString({ theme, type, cb })
-        if (type.search(/\bfixed/) != -1) field = inputInteger({ theme, type, cb })
-        if (type.search(/\bbool/) != -1) field = inputBoolean({ theme, type, cb })
-        if (type.search(/\baddress/) != -1) field = inputAddress({ theme, type, cb })
-      }
-      return field
-    }
-
-    function functions (fn) {
-      const glossary = require('glossary')
-      var theme = { classes: css }
-      var label = fn.stateMutability
-      var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><span class=${css.name}>${fn.name}</span></a>`
-      var title = bel`<h3 class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</h3>`
-      var send = bel`<button class="${css.button} ${css.send}" 
-                onclick=${e => sendTx(fn.name, label, e)}>SEND <i class="${css.icon} fa fa-arrow-right"></i></button>`
-      var functionClass = css[label]
-      var el = bel`
-      <div class=${css.fnContainer}>
-        <div class="${functionClass} ${css.function}">
-          ${title}
-          <div class=${css.visible}>
-            <div class=${css.inputsList}>
-              ${fn.inputs}
-            </div>
-            <div class=${css.actions}>
-              ${send}
-            </div>
-          </div>
-        </div>
-      </div>`
-      if (label === 'payable')  send.parentNode.insertAdjacentElement('beforeBegin', inputPayable({ theme, label}))
-      return el
-    }
-
-    async function sendTx (fnName, label, e) {
-      var theme = { classes: css, colors }
-      var loader = bel`<div class=${css.txReturnItem}>${loadingAnimation(colors, 'Awaiting network confirmation')}</div>`
-      var container = e.target.parentNode.parentNode
-      var sibling = e.target.parentNode.previousElementSibling
-      var txReturn = container.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
-      if (contract) {  // if deployed
-        container.insertBefore(txReturn, sibling)
-        // container.appendChild(txReturn)
-        txReturn.appendChild(loader)
-        let signer = await provider.getSigner()
-        var allArgs = getArgs(container, 'inputContainer')
-        var args = allArgs.args
-        try {
-          let contractAsCurrentSigner = contract.connect(signer)
-          var transaction
-          if (allArgs.overrides) { transaction = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
-          else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
-          let abi = solcMetadata.output.abi
-          const data = { contract, solcMetadata, provider, transaction, fnName }
-          loader.replaceWith(await makeReturn({ data }))
-        } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
-      } else {
-        let deploy = document.querySelector("#publish")
-        deploy.classList.add(css.bounce)
-        setTimeout(()=>deploy.classList.remove(css.bounce), 3500)
-      }
-    }
-
-    function toggleAll (e) {
-      var fnContainer = e.currentTarget.parentElement.parentElement.children[2]
-      var constructorToggle = e.currentTarget.children[0]
-      var constructorIcon = constructorToggle.children[0]
-      constructorToggle.removeChild(constructorIcon)
-      var on = bel`<i class="fa fa-angle-right ${css.collapse}" title="Collapse">`
-      var off = bel`<i class="fa fa-angle-right ${css.expend}" title="Expand to see the details">`
-      var icon = constructorIcon.className.includes('expend') ? on : off
-      constructorToggle.appendChild(icon)
-      for (var i = 0; i < fnContainer.children.length; i++) {
-        var fn = fnContainer.children[i]
-        var e = fn.children[0]
-        toggle(e, fn, constructorIcon)
-      }
-    }
-
-    function toggle (e, fun, constructorIcon) {
-      var fn
-      var toggleContainer
-      function removeLogs (el) {
-        var txReturn = el.parentNode.querySelectorAll("[class^='txReturn']")[0]
-        if (txReturn) {
-          txReturn.classList.remove(css.visible)
-          txReturn.classList.add(css.hidden)
-          txReturn.style.minHeight = 0
-        }
-      }
-      function addLogs (el) {
-        var txReturn = el.parentNode.querySelectorAll("[class^='txReturn']")[0]
-        if (txReturn) {
-          txReturn.classList.remove(css.hidden)
-          txReturn.classList.add(css.visible)
-          txReturn.style.minHeight = '80px'
-        }
-      }
-      // TOGGLE triggered by toggleAll
-      if (fun != null) {
-        fn = fun.children[0]
-        toggleContainer = e.children[1]
-        var fnInputs = fn.children[1]
-        // Makes sure all functions are opened or closed before toggleAll executes
-        if (constructorIcon.className.includes('expend') && fnInputs.className === css.visible.toString()) {
-          fnInputs.classList.remove(css.visible)
-          fnInputs.classList.add(css.hidden)
-          removeLogs(fn)
-        }
-        else if (constructorIcon.className.includes('collapse') && fnInputs.className === css.hidden.toString()) {
-          fnInputs.classList.remove(css.hidden)
-          fnInputs.classList.add(css.visible)
-          addLogs(fn)
-        }
-      // TOGGLE triggered with onclick on function title (toggle single function)
-      } else {
-        fn = e.currentTarget.parentNode
-        toggleContainer = e.currentTarget.children[1]
-      }
-      // TOGGLE input fields in a function
-      var params = fn.children[1]
-      if (params.className === css.visible.toString()) {
-        params.classList.remove(css.visible)
-        params.classList.add(css.hidden)
-        removeLogs(fn)
-      } else {
-        params.classList.remove(css.hidden)
-        params.classList.add(css.visible)
-        addLogs(fn)
-      }
-    }
-
-    // Create and deploy contract using WEB3
-    async function deployContract() {
-      var theme = { classes: css }
-      let abi = solcMetadata.output.abi
-      let bytecode = opts.metadata.bytecode
-      provider =  await getProvider()
-      let signer = await provider.getSigner()
-
-      var el = document.querySelector("[class^='ctor']")
-      let factory = await new ethers.ContractFactory(abi, bytecode, signer)
-      el.replaceWith(bel`<div class=${css.deploying}>${loadingAnimation(colors, 'Publishing to Ethereum network')}</div>`)
-      try {
-        var allArgs = getArgs(el, 'inputContainer')
-        let args = allArgs.args
-        var instance
-        if (allArgs.overrides) { instance = await factory.deploy(...args, allArgs.overrides) }
-        else { instance = await factory.deploy(...args) }
-        // instance = await factory.deploy(...args)
-        contract = instance
-        let deployed = await contract.deployed()
-        topContainer.innerHTML = ''
-        const theme = { colors }
-        topContainer.appendChild(makeDeployReceipt({ provider, theme, contract }))
-        activateSendTx(contract)
-      } catch (e) {
-        let loader = document.querySelector("[class^='deploying']")
-        loader.replaceWith(ctor)
-      }
-    }
-
-    function activateSendTx(instance) {
-      let sendButtons = document.querySelectorAll("[class^='send']")
-      for(var i = 0;i < sendButtons.length;i++) {
-        sendButtons[i].style.color = colors.slateGrey
-      }
-      for(var i = 0;i < sendButtons.length;i++) {
-        sendButtons[i].style.color = colors.whiteSmoke
-      }
-    }
-
-    var topContainer = bel`<section class=${css.topContainer}></section>`
-    var ctor = bel`<div class="${css.ctor}">
-      ${metadata.constructorInput}
-      <div class=${css.actions}>
-        <button id="publish" class="${css.button} ${css.deploy}" onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
-          PUBLISH <i class="${css.icon} fa fa-arrow-right"></i>
-        </button>
-      </div>
-    </div>`
-    topContainer.appendChild(ctor)
-
-    el = bel`<div class=${css.preview}>
-      <section class=${css.constructorFn}>
-        <h1 class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
-          ${metadata.constructorName}
-          <span class="${css.icon} ${css.expend}"><i class="fa fa-angle-right" title="Expand to see the details"></i></span>
-        </h1>
-      </section>
-      ${topContainer}
-      <section class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</section>
-    </div>`
-  }
+  const el = bel`<div class=${css.smartcontractui}>
+    <section class=${css.constructorFn}>
+      <h1 class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
+        ${metadata.constructorName}
+        <span class="${css.icon} ${css.expend}"><i class="fa fa-angle-right" title="Expand to see the details"></i></span>
+      </h1>
+    </section>
+    ${topContainer}
+    <section class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</section>
+  </div>`
 
   updateTheme(vars)
   return el
@@ -23293,11 +23024,262 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       el.style.setProperty(`--${name}`, vars[name])
     })
   }
+  function getConstructorName() {
+    var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
+    return solcMetadata.settings.compilationTarget[file]
+  }
+  function getConstructorInput() {
+    var payable = false
+    var inputs = solcMetadata.output.abi.map(fn => {
+      if (fn.type === "constructor") {
+        if (fn.stateMutability === 'payable') payable = true
+        return treeForm(fn.inputs)
+      }
+    })
+    if (payable === true) inputs.unshift(inputPayable('payable'))
+    return inputs
+  }
+  function getContractFunctions() {
+    return solcMetadata.output.abi.map(x => {
+      var obj = {}
+      obj.name = x.name
+      obj.type = x.type
+      obj.inputs = getAllInputs(x)
+      obj.outputs = getAllOutputs(x)
+      obj.stateMutability = x.stateMutability
+      return obj
+    })
+  }
+  function getAllInputs(fn) {
+    var inputs = []
+    if (fn.inputs) {
+      return treeForm(fn.inputs)
+    }
+  }
+  function getAllOutputs(fn) {
+    var outputs = []
+    if (fn.outputs) {
+      return treeForm(fn.outputs)
+    }
+  }
+  function treeForm(data) {
+    return data.map(x => {
+      if (x.components) {
+        return bel`<li><div>${x.name} (${x.type})</div><ul>${treeForm(x.components)}</ul></li>`
+      }
+      if (!x.components) {
+        return generateInputContainer(x)
+      }
+    })
+  }
+  function sort (functions) {
+    return functions.filter(x => x.type === 'function').sort((a, b) => type2num(a) - type2num(b))
+    function type2num ({ stateMutability: sm }) {
+      if (sm === 'view') return 1
+      if (sm === 'nonpayable') return 2
+      if (sm === 'pure') return 3
+      if (sm === 'payable') return 4
+      if (sm === undefined) return 5
+    }
+  }
+  function generateInputContainer (field) {
+    var theme = { classes: css, colors}
+    var name = field.name
+    var type = field.type
+    var inputField = getInputField( {theme, type, cb})
+    var inputContainer = bel`
+      <div class=${css.inputContainer}>
+        <label class=${css.inputParam} title="data type: ${type}">${name || 'key'}</label>
+        <div class=${css.inputFields}>${inputField}</div>
+      </div>`
+    return inputContainer
+    function cb (msg, el, value) {
+      var oldOutput = el.parentNode.querySelector("[class^='output']")
+      var output = oldOutput ? oldOutput : output = bel`<span class=${css.output}></span>`
+      output.innerHTML = ""
+      output.innerHTML = msg ? `<span class=${css.valError} title="${msg}"><i class="fa fa-exclamation"></i></span>` : `<span class=${css.valSuccess} title="The value is valid."><i class="fa fa-check"></i></span>`
+      el.parentNode.appendChild(output)
+    }
+  }
+  function getInputField ({ theme, type, cb}) {
+    var field
+    if ((type.search(/\]/) != -1)) {
+      var arrayInfo = type.split('[')[1]
+      var digit = arrayInfo.search(/\d/)
+      field = inputArray({ theme, type, cb })
+    } else {
+      if ((type.search(/\buint/) != -1) || (type.search(/\bint/) != -1)) field = inputInteger({ theme, type, cb })
+      if (type.search(/\bbyte/) != -1) field = inputByte({ theme, type, cb })
+      if (type.search(/\bstring/) != -1) field = inputString({ theme, type, cb })
+      if (type.search(/\bfixed/) != -1) field = inputInteger({ theme, type, cb })
+      if (type.search(/\bbool/) != -1) field = inputBoolean({ theme, type, cb })
+      if (type.search(/\baddress/) != -1) field = inputAddress({ theme, type, cb })
+    }
+    return field
+  }
+  function functions (fn) {
+    const glossary = require('glossary')
+    var theme = { classes: css }
+    var label = fn.stateMutability
+    var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><span class=${css.name}>${fn.name}</span></a>`
+    var title = bel`<h3 class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</h3>`
+    var send = bel`<button class="${css.button} ${css.send}" 
+              onclick=${e => sendTx(fn.name, label, e)}>SEND <i class="${css.icon} fa fa-arrow-right"></i></button>`
+    var functionClass = css[label]
+    var el = bel`
+    <div class=${css.fnContainer}>
+      <div class="${functionClass} ${css.function}">
+        ${title}
+        <div class=${css.visible}>
+          <div class=${css.inputsList}>
+            ${fn.inputs}
+          </div>
+          <div class=${css.actions}>
+            ${send}
+          </div>
+        </div>
+      </div>
+    </div>`
+    if (label === 'payable')  send.parentNode.insertAdjacentElement('beforeBegin', inputPayable({ theme, label}))
+    return el
+  }
+  async function sendTx (fnName, label, e) {
+    var theme = { classes: css, colors }
+    var loader = bel`<div class=${css.txReturnItem}>${loadingAnimation(colors, 'Awaiting network confirmation')}</div>`
+    var container = e.target.parentNode.parentNode
+    var sibling = e.target.parentNode.previousElementSibling
+    var txReturn = container.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
+    if (contract) {  // if deployed
+      container.insertBefore(txReturn, sibling)
+      // container.appendChild(txReturn)
+      txReturn.appendChild(loader)
+      let signer = await provider.getSigner()
+      var allArgs = getArgs(container, 'inputContainer')
+      var args = allArgs.args
+      try {
+        let contractAsCurrentSigner = contract.connect(signer)
+        var transaction
+        if (allArgs.overrides) { transaction = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
+        else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
+        let abi = solcMetadata.output.abi
+        const data = { contract, solcMetadata, provider, transaction, fnName }
+        loader.replaceWith(await makeReturn({ data }))
+      } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
+    } else {
+      let deploy = document.querySelector("#publish")
+      deploy.classList.add(css.bounce)
+      setTimeout(()=>deploy.classList.remove(css.bounce), 3500)
+    }
+  }
+  function toggleAll (e) {
+    var fnContainer = e.currentTarget.parentElement.parentElement.children[2]
+    var constructorToggle = e.currentTarget.children[0]
+    var constructorIcon = constructorToggle.children[0]
+    constructorToggle.removeChild(constructorIcon)
+    var on = bel`<i class="fa fa-angle-right ${css.collapse}" title="Collapse">`
+    var off = bel`<i class="fa fa-angle-right ${css.expend}" title="Expand to see the details">`
+    var icon = constructorIcon.className.includes('expend') ? on : off
+    constructorToggle.appendChild(icon)
+    for (var i = 0; i < fnContainer.children.length; i++) {
+      var fn = fnContainer.children[i]
+      var e = fn.children[0]
+      toggle(e, fn, constructorIcon)
+    }
+  }
+  function toggle (e, fun, constructorIcon) {
+    var fn
+    var toggleContainer
+    // TOGGLE triggered by toggleAll
+    if (fun != null) {
+      fn = fun.children[0]
+      toggleContainer = e.children[1]
+      var fnInputs = fn.children[1]
+      // Makes sure all functions are opened or closed before toggleAll executes
+      if (constructorIcon.className.includes('expend') && fnInputs.className === css.visible.toString()) {
+        fnInputs.classList.remove(css.visible)
+        fnInputs.classList.add(css.hidden)
+        removeLogs(fn)
+      }
+      else if (constructorIcon.className.includes('collapse') && fnInputs.className === css.hidden.toString()) {
+        fnInputs.classList.remove(css.hidden)
+        fnInputs.classList.add(css.visible)
+        addLogs(fn)
+      }
+    // TOGGLE triggered with onclick on function title (toggle single function)
+    } else {
+      fn = e.currentTarget.parentNode
+      toggleContainer = e.currentTarget.children[1]
+    }
+    // TOGGLE input fields in a function
+    var params = fn.children[1]
+    if (params.className === css.visible.toString()) {
+      params.classList.remove(css.visible)
+      params.classList.add(css.hidden)
+      removeLogs(fn)
+    } else {
+      params.classList.remove(css.hidden)
+      params.classList.add(css.visible)
+      addLogs(fn)
+    }
+    function removeLogs (el) {
+      var txReturn = el.parentNode.querySelectorAll("[class^='txReturn']")[0]
+      if (txReturn) {
+        txReturn.classList.remove(css.visible)
+        txReturn.classList.add(css.hidden)
+        txReturn.style.minHeight = 0
+      }
+    }
+    function addLogs (el) {
+      var txReturn = el.parentNode.querySelectorAll("[class^='txReturn']")[0]
+      if (txReturn) {
+        txReturn.classList.remove(css.hidden)
+        txReturn.classList.add(css.visible)
+        txReturn.style.minHeight = '80px'
+      }
+    }
+  }
+  async function deployContract () { // Create and deploy contract using WEB3
+    var theme = { classes: css }
+    let abi = solcMetadata.output.abi
+    let bytecode = opts.metadata.bytecode
+    provider =  await getProvider()
+    let signer = await provider.getSigner()
+
+    var el = document.querySelector("[class^='ctor']")
+    let factory = await new ethers.ContractFactory(abi, bytecode, signer)
+    el.replaceWith(bel`<div class=${css.deploying}>${loadingAnimation(colors, 'Publishing to Ethereum network')}</div>`)
+    try {
+      var allArgs = getArgs(el, 'inputContainer')
+      let args = allArgs.args
+      var instance
+      if (allArgs.overrides) { instance = await factory.deploy(...args, allArgs.overrides) }
+      else { instance = await factory.deploy(...args) }
+      // instance = await factory.deploy(...args)
+      contract = instance
+      let deployed = await contract.deployed()
+      topContainer.innerHTML = ''
+      const theme = { colors }
+      topContainer.appendChild(makeDeployReceipt({ provider, theme, contract }))
+      activateSendTx(contract)
+    } catch (e) {
+      let loader = document.querySelector("[class^='deploying']")
+      loader.replaceWith(ctor)
+    }
+  }
+  function activateSendTx(instance) {
+    let sendButtons = document.querySelectorAll("[class^='send']")
+    for(var i = 0;i < sendButtons.length;i++) {
+      sendButtons[i].style.color = colors.slateGrey
+    }
+    for(var i = 0;i < sendButtons.length;i++) {
+      sendButtons[i].style.color = colors.whiteSmoke
+    }
+  }
 }
 const classes = csjs`
 .button {
 }
-.preview {
+.smartcontractui {
   max-width: 560px;
   margin: 0 auto;
   padding: 1% 2%;
@@ -23898,7 +23880,7 @@ input[type="range"]:focus::-ms-fill-upper {
 
 }
 @media (max-width: 640px) {
-  .preview {
+  .smartcontractui {
     width: 100%;
   }
 }`
@@ -24004,4 +23986,4 @@ const variables = { // defaults
   ethIconColor: '',
   ethIconFontSize: '',
 }
-},{"../demo/node_modules/theme":19,"bel":24,"copy-text-to-clipboard":28,"csjs-inject":31,"ethers":49,"getArgs":153,"glossary":156,"input-address":54,"input-array":55,"input-boolean":56,"input-byte":69,"input-integer":70,"input-payable":71,"input-string":72,"loadingAnimation":157,"makeDeployReceipt":158,"makeReturn":159,"shortenHexData":161,"wallet":162}]},{},[1]);
+},{"../demo/node_modules/theme":19,"bel":24,"copy-text-to-clipboard":28,"csjs-inject":31,"ethers":49,"getArgs":153,"glossary":156,"helper/patch-result":157,"input-address":54,"input-array":55,"input-boolean":56,"input-byte":69,"input-integer":70,"input-payable":71,"input-string":72,"loadingAnimation":158,"makeDeployReceipt":159,"makeReturn":160,"shortenHexData":162,"wallet":163}]},{},[1]);
