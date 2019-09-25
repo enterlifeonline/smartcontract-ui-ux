@@ -45719,8 +45719,9 @@ const classes = csjs`
   text-align: var(--inputFieldTextAlign);
   padding: 6px 28px 6px 12px;
   border-radius: var(--inputFieldBorderRadius);
-  border: var(--inputFieldBorder);
-  width: calc(100% - 40px)
+  border: 1px solid var(--inputFieldBorderColor);
+  width: calc(100% - 40px);
+  transition: border .6s ease-in-out;
 }
 .inputField::placeholder {
   color: var(--inputFieldPlaceholderColor);
@@ -45912,8 +45913,9 @@ const classes = csjs`
   text-align: var(--inputFieldTextAlign);
   padding: 6px 28px 6px 12px;
   border-radius: var(--inputFieldBorderRadius);
-  border: var(--inputFieldBorder);
-  width: calc(100% - 40px)
+  border: 1px solid var(--inputFieldBorderColor);
+  width: calc(100% - 40px);
+  transition: border .6s ease-in-out;
 }
 .inputField::placeholder {
   color: var(--inputFieldPlaceholderColor);
@@ -46214,15 +46216,16 @@ const classes = csjs`
   grid-column-gap: 5px;
 }
 .inputField {
-  background-color: var(--inputFieldBackgroundColor);
-  border-radius: 2px;
-  color: var(--inputFieldColor);
-  border: var(--inputFieldBorder);
-  text-align: center;
-  font-family: var(--bodyFont);
+  font-family: 'Nunito', sans-serif;
   font-size: var(--inputFieldFontSize);
-  padding: 5px;
-  width: calc(100% - 10px);
+  color: var(--inputFieldColor);
+  background-color: var(--inputFieldBackgroundColor);
+  text-align: var(--inputFieldTextAlign);
+  padding: 6px 28px 6px 12px;
+  border-radius: var(--inputFieldBorderRadius);
+  border: 1px solid var(--inputFieldBorderColor);
+  width: calc(100% - 40px);
+  transition: border .6s ease-in-out;
 }
 .inputField::placeholder {
   color: var(--inputFieldPlaceholderColor);
@@ -46390,8 +46393,9 @@ const classes = csjs`
   text-align: var(--inputFieldTextAlign);
   padding: 6px 28px 6px 12px;
   border-radius: var(--inputFieldBorderRadius);
-  border: var(--inputFieldBorder);
-  width: calc(100% - 40px)
+  border: 1px solid var(--inputFieldBorderColor);
+  width: calc(100% - 40px);
+  transition: border .6s ease-in-out;
 }
 .inputField::placeholder {
   color: var(--inputFieldPlaceholderColor);
