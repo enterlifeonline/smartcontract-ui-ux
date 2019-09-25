@@ -2,6 +2,7 @@ const bel = require("bel")
 const csjs = require("csjs-inject")
 
 const getProvider = require('wallet')
+const getTxOutput = require('getTxOutput')
 
 const patchResult = require('helper/patch-result')
 
@@ -188,7 +189,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     var label = fn.stateMutability
     var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><span class=${css.name}>${fn.name}</span></a>`
     var title = bel`<h3 class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</h3>`
-    var send = bel`<button class="${css.button} ${css.send}" 
+    var send = bel`<button class="${css.button} ${css.send}"
               onclick=${e => sendTx(fn.name, label, e)}>SEND <i class="${css.icon} fa fa-arrow-right"></i></button>`
     var functionClass = css[label]
     var el = bel`
@@ -208,7 +209,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     if (label === 'payable')  send.parentNode.insertAdjacentElement('beforeBegin', inputPayable({ theme, label}))
     return el
   }
-  async function sendTx (fnName, label, e) {
+  async function sendTx (fnName, label, e) { //CHANGE
     var theme = { classes: css, colors }
     var loader = bel`<div class=${css.txReturnItem}>${loadingAnimation(colors, 'Awaiting network confirmation')}</div>`
     var container = e.target.parentNode.parentNode
@@ -220,14 +221,16 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       txReturn.appendChild(loader)
       let signer = await provider.getSigner()
       var allArgs = getArgs(container, 'inputContainer')
-      var args = allArgs.args
+      const args = allArgs.args
       try {
         let contractAsCurrentSigner = contract.connect(signer)
+        const fn = contract.interface.functions[fnName]
         var transaction
         if (allArgs.overrides) { transaction = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
         else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
-        let abi = solcMetadata.output.abi
-        const data = { contract, solcMetadata, provider, transaction, fnName }
+        const output = fn.type === "transaction" ?
+          await getTxOutput(contract, fnName, provider, args) : null
+        const data = { contract, solcMetadata, provider, transaction, fnName, output } // CHANGE
         loader.replaceWith(await makeReturn({ data }, () => {}))
       } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
     } else {
@@ -455,7 +458,7 @@ const classes = csjs`
   top: -8px;
   right: -35px;
   transition: background-color .6s ease-in-out;
-} 
+}
 .deploy:hover, .send:hover {
   ${hover()}
 }
@@ -606,7 +609,7 @@ const classes = csjs`
   color: var(--txReturnValueColorHover);
 }
 .signature {
-  
+
 }
 .pure {
   color: var(--yellow);
@@ -694,7 +697,7 @@ const classes = csjs`
   -webkit-appearance: none;
   background-color: transparent;
   width: 100%;
-  max-width: 100%;  
+  max-width: 100%;
   border-radius: 3px;
   grid-row: 2;
 }
