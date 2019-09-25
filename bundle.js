@@ -40050,22 +40050,23 @@ async function makeReturn ({ data = {}, theme = {} }, protocol) {
   var el = bel`<div class=${css.txReturnItem}></div>`
   var opts = { contract, fnName, solcMetadata}
   opts.transaction = transaction
-  var input
+  var inputs
+  var outputs
   if (transaction.hash) {  // nonpayable and payable
     opts.receipt = await transaction.wait()
     opts.data = transaction.data
     opts.tag = 'transaction'
-    input = getReturnData(opts)
-    //el.appendChild(moreInfo(provider._network.name, transaction.hash))
+    outputs = output
+    inputs = getReturnData(opts)
   } else { // view and pure
     opts.tag = 'call'
     opts.transaction = transaction
-    input = getReturnData(opts)
+    outputs = getReturnData(opts)
+    inputs = ""
   }
 //  input = JSON.stringify(getReturnData(opts), null, 2))
   result = bel`<div class=${css.txReturnValue}>
-    <p>Input: ${input}</p>
-    <p>Output: ${output || "[]"}</p>
+    <p>Output for ${fnName}(${inputs}): ${outputs || "[]"}</p>
     ${transaction.hash ? moreInfo(provider._network.name, transaction.hash) : ''}
   </div>`
   if (el.innerHTML) el.replaceWith(result)
