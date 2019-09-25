@@ -23278,20 +23278,14 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     return field
     function focus(e) {
       var current
-      let containers = document.querySelectorAll("[class^='inputContainer'")
+      let containers = document.querySelectorAll(`.${css.inputContainer}`)
       containers.forEach( container => container.classList.remove(css.focus))
       if(e.target.parentNode.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
         current = e.target.parentNode.parentNode.parentNode.parentNode
-        // console.log('this: ', e.target);
-        // console.log('focus: ', current);
       } else if (e.target.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
         current = e.target.parentNode.parentNode.parentNode
-        // console.log('this: ', e.target);
-        // console.log('focus: ', current);
       } else if (e.target.parentNode.parentNode.classList.contains(css.inputContainer)) {
         current = e.target.parentNode.parentNode
-        // console.log('this: ', e.target);
-        // console.log('focus: ', current);
       } 
       current.classList.add(css.focus)
     }
@@ -23299,16 +23293,10 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       var current
       if (e.target.parentNode.parentNode.classList.contains(css.inputContainer)) {
         current = e.target.parentNode.parentNode
-        // console.log('this: ', e.target);
-        // console.log('blur: ', current);
       } else if (e.target.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
         current = e.target.parentNode.parentNode.parentNode
-        // console.log('this: ', e.target);
-        // console.log('blur: ', current);
       } else if(e.target.parentNode.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
         current = e.target.parentNode.parentNode.parentNode.parentNode
-        // console.log('this: ', e.target);
-        // console.log('blur: ', current);
       }    
       current.classList.remove(css.focus)
     }
@@ -23318,7 +23306,8 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     let theme = { classes: css }
     let label = fn.stateMutability
     let fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><span class=${css.name}>${fn.name}</span></a>`
-    let title = bel`<h3 class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</h3>`
+    let constructorIcon = bel`<span class="${css.icon} ${css.expand}"><i class="fa fa-angle-right"></i></span>`
+    let title = bel`<h3 class=${css.title} onclick=${e=>toggle(e, null, constructorIcon)}>${fnName} ${constructorIcon}</h3>`
     let send = bel`<button class="${css.button} ${css.send}" onclick=${e => sendTx(fn.name, label, e)} disabled>SEND <i class="${css.icon} fa fa-arrow-right"></i></button>`
     let testButton = bel`<button class="${css.button} ${css.send}" onclick=${ e => sendValue( fn.name, label, e) }>Send</button>`
     let functionClass = css[label]
@@ -23343,16 +23332,10 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       var current
       if (e.target.parentNode.parentNode.classList.contains(css.inputContainer)) {
         current = e.target.parentNode.parentNode
-        // console.log('this: ', e.target);
-        // console.log('focus: ', current);
       } else if (e.target.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
         current = e.target.parentNode.parentNode.parentNode
-        // console.log('this: ', e.target);
-        // console.log('focus: ', current);
       } else if(e.target.parentNode.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
         current = e.target.parentNode.parentNode.parentNode.parentNode
-        // console.log('this: ', e.target);
-        // console.log('focus: ', current);
       }
       current.classList.add(css.focus)
     }
@@ -23360,16 +23343,10 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       var current
       if (e.target.parentNode.parentNode.classList.contains(css.inputContainer)) {
         current = e.target.parentNode.parentNode
-        // console.log('this: ', e.target);
-        // console.log('blur: ', current);
       } else if (e.target.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
         current = e.target.parentNode.parentNode.parentNode
-        // console.log('this: ', e.target);
-        // console.log('blur: ', current);
       } else if(e.target.parentNode.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
         current = e.target.parentNode.parentNode.parentNode.parentNode.parentNode
-        // console.log('this: ', e.target);
-        // console.log('blur: ', current);
       }    
       current.classList.remove(css.focus)
     }
@@ -23390,7 +23367,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     logs.appendChild(txReturn)
     // txReturn.appendChild(loader)
 
-    el.appendChild(bel`<div class=${css.txReturnValue}>'wrwrwerw'  ${timer.getUTCSeconds()}</div>`)
+    el.appendChild(bel`<div class=${css.txReturnValue}>'wrwrwerw' ${timer.getUTCSeconds()}</div>`)
     el.appendChild(span)
 
     try {
@@ -23451,43 +23428,54 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     
   }
   function toggleAll (e) {
-    var fnContainer = e.currentTarget.parentElement.parentElement.children[2]
-    var constructorToggle = e.currentTarget.children[0]
-    var constructorIcon = constructorToggle.children[0]
+    let fnContainer = e.currentTarget.parentElement.parentElement.children[2]
+    let constructorToggle = e.currentTarget.children[0]
+    let constructorIcon = constructorToggle.children[0]
     constructorToggle.removeChild(constructorIcon)
-    var off = bel`<i class="fa fa-angle-right ${css.collapse}" title="Collapse">`
-    var on = bel`<i class="fa fa-angle-right ${css.expand}" title="Expand to see the details">`
-    var icon = constructorIcon.className.includes('collapse') ? on : off
+    let off = bel`<i class="fa fa-angle-right" title="Collapse">`
+    let on = bel`<i class="fa fa-angle-right" title="Expand to see the details">`
+    let icon = constructorToggle.className.includes('expand') ? on : off
+    let toggleClass = constructorToggle.classList.contains(css.expand) ? css.collapse : css.expand
+
+    constructorToggle.className = `${css.icon} ${toggleClass}`
     constructorToggle.appendChild(icon)
+    
+    
     for (var i = 0; i < fnContainer.children.length; i++) {
       var fn = fnContainer.children[i]
       var e = fn.children[0]
-      toggle(e, fn, constructorIcon)
+      toggle(e, fn, constructorToggle)
     }
   }
-  function toggle (e, fun, constructorIcon) {
+  function toggle (e, fun, constructorToggle) {
     var fn
     var toggleContainer
     // TOGGLE triggered by toggleAll
+    // console.log(constructorIcon) // .topContainer i.fa.fa-angle-right
     if (fun != null) {
-      fn = fun.children[0]
-      toggleContainer = e.children[1]
-      var fnInputs = fn.children[1]
+      fn = fun.children[0] // .function
+      toggleContainer = e.children[1] // .visible
       // Makes sure all functions are opened or closed before toggleAll executes
-      if (constructorIcon.className.includes('expand') && fnInputs.className === css.hidden.toString()) {
-        fnInputs.classList.remove(css.hidden)
-        fnInputs.classList.add(css.visible)
-        removeLogs(fn)
+      if ( constructorToggle.className.includes(css.expand) ) {
+        if (fn.querySelector(`.${css.collapse}`)) {
+          fn.querySelector(`.${css.collapse}`).className = `${css.icon} ${css.expand}`
+        }
+        toggleContainer.className = css.hidden
+      } else {
+        if (fn.querySelector(`.${css.expand}`)) {
+          fn.querySelector(`.${css.expand}`).className = `${css.icon} ${css.collapse}`
+        }
+        toggleContainer.className = css.visible
       }
-      else if (constructorIcon.className.includes('collapse') && fnInputs.className === css.visible.toString()) {
-        fnInputs.classList.remove(css.visible)
-        fnInputs.classList.add(css.hidden)
-        addLogs(fn)
-      }
+      
     // TOGGLE triggered with onclick on function title (toggle single function)
     } else {
       fn = e.currentTarget.parentNode
-      toggleContainer = e.currentTarget.children[1]
+      if (constructorToggle.className.includes(css.expand)) {
+        constructorToggle.className = `${css.icon} ${css.collapse}`
+      } else {
+        constructorToggle.className = `${css.icon} ${css.expand}`
+      }
     }
     // TOGGLE input fields in a function
     var params = fn.children[1]
@@ -24099,7 +24087,7 @@ input[type="range"]:focus::-ms-fill-upper {
   text-align: center;
   z-index: 3;
 }
-.expand {
+.expand, .collapse {
   position: absolute;
   right: 5px;
   top: 3px;
@@ -24107,12 +24095,13 @@ input[type="range"]:focus::-ms-fill-upper {
 }
 .expand i {
   transform: rotate(90deg);
+  font-size: 1.2rem;
   margin-left: -15px;
-}
-.expand .expand {
   animation: expendOn .3s ease-in forwards;
 }
-.expand .collapse {
+.collapse i {
+  font-size: 1.2rem;
+  margin-left: -15px;
   animation: expendOff .3s ease-out forwards;
 }
 @-webkit-keyframes expendOn {
