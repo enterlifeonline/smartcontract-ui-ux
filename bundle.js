@@ -23132,7 +23132,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     <section class=${css.constructorFn}>
       <h1 class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
         ${metadata.constructorName}
-        <span class="${css.icon} ${css.expend}"><i class="fa fa-angle-right" title="Expand to see the details"></i></span>
+        <span class="${css.icon} ${css.expand}"><i class="fa fa-angle-right" title="Expand to see the details"></i></span>
       </h1>
     </section>
     ${topContainer}
@@ -23455,9 +23455,9 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     var constructorToggle = e.currentTarget.children[0]
     var constructorIcon = constructorToggle.children[0]
     constructorToggle.removeChild(constructorIcon)
-    var on = bel`<i class="fa fa-angle-right ${css.collapse}" title="Collapse">`
-    var off = bel`<i class="fa fa-angle-right ${css.expend}" title="Expand to see the details">`
-    var icon = constructorIcon.className.includes('expend') ? on : off
+    var off = bel`<i class="fa fa-angle-right ${css.collapse}" title="Collapse">`
+    var on = bel`<i class="fa fa-angle-right ${css.expand}" title="Expand to see the details">`
+    var icon = constructorIcon.className.includes('collapse') ? on : off
     constructorToggle.appendChild(icon)
     for (var i = 0; i < fnContainer.children.length; i++) {
       var fn = fnContainer.children[i]
@@ -23474,7 +23474,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       toggleContainer = e.children[1]
       var fnInputs = fn.children[1]
       // Makes sure all functions are opened or closed before toggleAll executes
-      if (constructorIcon.className.includes('expend') && fnInputs.className === css.hidden.toString()) {
+      if (constructorIcon.className.includes('expand') && fnInputs.className === css.hidden.toString()) {
         fnInputs.classList.remove(css.hidden)
         fnInputs.classList.add(css.visible)
         removeLogs(fn)
@@ -24099,20 +24099,20 @@ input[type="range"]:focus::-ms-fill-upper {
   text-align: center;
   z-index: 3;
 }
-.expend {
+.expand {
   position: absolute;
   right: 5px;
   top: 3px;
   z-index: 3;
 }
-.expend i {
-  transform: rotate(0deg);
+.expand i {
+  transform: rotate(90deg);
   margin-left: -15px;
 }
-.expend .expend {
+.expand .expand {
   animation: expendOn .3s ease-in forwards;
 }
-.expend .collapse {
+.expand .collapse {
   animation: expendOff .3s ease-out forwards;
 }
 @-webkit-keyframes expendOn {
