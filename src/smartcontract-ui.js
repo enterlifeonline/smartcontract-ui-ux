@@ -2,6 +2,7 @@ const bel = require("bel")
 const csjs = require("csjs-inject")
 
 const getProvider = require('wallet')
+const getTxOutput = require('getTxOutput')
 
 const patchResult = require('helper/patch-result')
 
@@ -208,7 +209,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     if (label === 'payable')  send.parentNode.insertAdjacentElement('beforeBegin', inputPayable({ theme, label}))
     return el
   }
-  async function sendTx (fnName, label, e) {
+  async function sendTx (fnName, label, e) { //CHANGE
     var theme = { classes: css, colors }
     var loader = bel`<div class=${css.txReturnItem}>${loadingAnimation(colors, 'Awaiting network confirmation')}</div>`
     var container = e.target.parentNode.parentNode
@@ -228,7 +229,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
         if (allArgs.overrides) { transaction = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
         else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
         const output = fn.type === "transaction" ?
-          await makeContractCallable(contract, fnName, provider, args) : null
+          await getTxOutput(contract, fnName, provider, args) : null
         const data = { contract, solcMetadata, provider, transaction, fnName, output } // CHANGE
         loader.replaceWith(await makeReturn({ data }, () => {}))
       } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
@@ -237,22 +238,6 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       deploy.classList.add(css.bounce)
       setTimeout(()=>deploy.classList.remove(css.bounce), 3500)
     }
-  }
-  async function makeContractCallable (contract, fnName, provider, args) {
-    debugger
-    const fn = contract.interface.functions[fnName]
-    const signature = fn.signature
-    const address = contract.address
-    const inputs = fn.inputs[0].type // @TODO make it work for more complex return, now it returns just first one
-    let contractCallable = new ethers.Contract(
-      address,
-      [ "function " + signature + ` constant returns(${inputs})` ],
-      provider)
-    try {
-      var tx = await contractCallable.functions[fnName](...args)
-      console.log(tx)
-      return tx
-    } catch (e) { console.log(e) }
   }
   function toggleAll (e) {
     var fnContainer = e.currentTarget.parentElement.parentElement.children[2]
