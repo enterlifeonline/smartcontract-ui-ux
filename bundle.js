@@ -40156,7 +40156,7 @@ const ethers = require('ethers')
 module.exports = getProvider
 
 async function getProvider () {
-  if (window.web3.currentProvider) {
+  if (window.web3 && window.web3.currentProvider) {
     try { // Acccounts now exposed
       provider = new ethers.providers.Web3Provider(window.web3.currentProvider)
       await ethereum.enable() // Request account access if needed
