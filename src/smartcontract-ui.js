@@ -13,13 +13,6 @@ const getArgs = require('getArgs')
 const makeReturn = require('makeReturn')
 const shortenHexData = require('shortenHexData')
 
-const inputAddress = require("input-address")
-const inputArray = require("input-array")
-const inputInteger = require("input-integer")
-const inputBoolean = require("input-boolean")
-const inputString = require("input-string")
-const inputByte = require("input-byte")
-const inputPayable = require("input-payable")
 
 const copy = require('copy-text-to-clipboard')
 const theme = require('../demo/node_modules/theme')
@@ -49,20 +42,38 @@ function smartcontractui ({ data, theme = {} }, protocol) {
   if (!opts || !opts.metadata) return notify({ type: 'error', body: opts })
   if (Array.isArray(opts.metadata)) return notify({ type: 'error', body: opts })
 
+  const smartcontractuiFN = require('smartcontract-ui-fn')
+
   const solcMetadata = opts.metadata
+  var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
+  const _ctor = solcMetadata.output.abi.filter(fn => fn.type === 'constructor')[0]
   const metadata = {
     compiler: solcMetadata.compiler.version,
     compilationTarget: solcMetadata.settings.compilationTarget,
-    constructorName: getConstructorName(),
-    constructorInput: getConstructorInput(),
-    functions: getContractFunctions()
+    constructorName: solcMetadata.settings.compilationTarget[file],
+    constructorInput: smartcontractuiFN({ data: _ctor, theme: { variables: vars } }, notify => {
+      return msg => {
+        const { type, body } = msg
+        console.log(`[${name}] receives:`, msg)
+        if (type === 'publish') deployContract()
+      }
+    }),
+    functions: solcMetadata.output.abi.map(x => {
+      return smartcontractuiFN({ data: x, theme: { variables: vars } }, notify => {
+        return msg => {
+          const { type, body } = msg
+          console.log(`[${name}] receives:`, msg)
+          if (type === 'send') deployContract()
+        }
+      })
+    })
   }
   const sorted = sort(metadata.functions)
 
-  const topContainer = bel`<section class=${css.topContainer}></section>`
   const ctor = bel`<div class="${css.ctor}">
     <div class=${css.publishInformation}>
-    Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.
+      Publish the contract first (this executes the Constructor function).
+      After that you will be able to start sending/receiving data using the contract functions below.
     </div>
     ${metadata.constructorInput}
     <div class=${css.actions}>
@@ -71,8 +82,47 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       </button>
     </div>
   </div>`
-  topContainer.appendChild(ctor)
-  
+  const topContainer = bel`<section class=${css.topContainer}>${ctor}</section>`
+
+  async function deployContract () { // Create and deploy contract using WEB3
+    
+    // @TODO: make constructor form module
+    // @TODO: make function form module
+    // @TODO: make them re-use parameter-form
+
+    // console.log('foo')
+    // throw new Error('stop')
+
+    var theme = { classes: css }
+    let abi = opts.metadata.output.abi
+    let bytecode = opts.metadata.bytecode
+    provider =  await getProvider()
+    let signer = await provider.getSigner()
+
+    var el = document.querySelector("[class^='ctor']")
+    let factory = await new ethers.ContractFactory(abi, bytecode, signer)
+    const loader = bel`<div class=${css.deploying}>${loadingAnimation(colors, 'Publishing to Ethereum network')}</div>`
+    el.replaceWith(loader)
+    try {
+      var allArgs = getArgs(el, 'inputContainer')
+      let args = allArgs.args
+      var instance
+      if (allArgs.overrides) { instance = await factory.deploy(...args, allArgs.overrides) }
+      else { instance = await factory.deploy(...args) }
+      // instance = await factory.deploy(...args)
+      contract = instance
+      let deployed = await contract.deployed()
+      topContainer.innerHTML = ''
+      const theme = { variables: colors }
+      const data = { provider, contract }
+      topContainer.appendChild(makeDeployReceipt({ data, theme }, notify => msg => {
+        console.log(`[${name}] receives:`, msg)
+      }))
+      activateSendTx(contract)
+    } catch (e) {
+      loader.replaceWith(ctor)
+    }
+  }
   const el = bel`<div class=${css.smartcontractui}>
     <section class=${css.constructorFn}>
       <h1 class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
@@ -257,14 +307,15 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     const glossary = require('glossary')
     let theme = { classes: css }
     let label = fn.stateMutability
+
     let fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><span class=${css.name}>${fn.name}</span></a>`
     let constructorIcon = bel`<span class="${css.icon} ${css.expand}"><i class="fa fa-angle-right"></i></span>`
     let title = bel`<h3 class=${css.title} onclick=${e=>toggle(e, null, constructorIcon)}>${fnName} ${constructorIcon}</h3>`
-    let send = bel`<button class="${css.button} ${css.send}" onclick=${e => sendTx(fn.name, label, e)} disabled>SEND <i class="${css.icon} fa fa-arrow-right"></i></button>`
+    let send = bel`<button class="${css.button} ${css.send}"
+              onclick=${e => sendTx(fn.name, label, e)} disabled>SEND <i class="${css.icon} fa fa-arrow-right"></i></button>`
     let testButton = bel`<button class="${css.button} ${css.send}" onclick=${ e => sendValue( fn.name, label, e) }>Send</button>`
     let functionClass = css[label]
-    let el = bel`
-    <div class=${css.fnContainer}>
+    let el = bel`<div class=${css.fnContainer}>
       <div class="${functionClass} ${css.function}">
         ${title}
         <div class=${css.visible}>
@@ -340,6 +391,34 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       txReturn.children.length > 1  ? txReturn.removeChild(loader) : logs.removeChild(txReturn)
     }
   }
+  // async function sendTx (fnName, label, e) {
+  //   var theme = { classes: css, colors }
+  //   var loader = bel`<div class=${css.txReturnItem}>${loadingAnimation(colors, 'Awaiting network confirmation')}</div>`
+  //   var container = e.target.parentNode.parentNode
+  //   var sibling = e.target.parentNode.previousElementSibling
+  //   var txReturn = container.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
+  //   if (contract) {  // if deployed
+  //     container.insertBefore(txReturn, sibling)
+  //     // container.appendChild(txReturn)
+  //     txReturn.appendChild(loader)
+  //     let signer = await provider.getSigner()
+  //     var allArgs = getArgs(container, 'inputContainer')
+  //     var args = allArgs.args
+  //     try {
+  //       let contractAsCurrentSigner = contract.connect(signer)
+  //       var transaction
+  //       if (allArgs.overrides) { transaction = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
+  //       else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
+  //       let abi = opts.metadata.output.abi
+  //       const data = { contract, solcMetadata: opts.metadata, provider, transaction, fnName }
+  //       loader.replaceWith(await makeReturn({ data }, () => {}))
+  //     } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
+  //   } else {
+  //     let deploy = publishBtn
+  //     deploy.classList.add(css.bounce)
+  //     setTimeout(()=>deploy.classList.remove(css.bounce), 3500)
+  //   }
+  // }
   async function sendTx (fnName, label, e) {
     let theme = { classes: css, colors }
     let loader = bel`<div class=${css.txReturnItem}>${loadingAnimation(colors, 'Awaiting network confirmation')}</div>`
@@ -444,45 +523,6 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       }
     }
   }
-  async function deployContract () { // Create and deploy contract using WEB3
-    var theme = { classes: css }
-    let abi = solcMetadata.output.abi
-    let bytecode = opts.metadata.bytecode
-    provider =  await getProvider()
-    let signer = await provider.getSigner()
-
-    var el = document.querySelector("[class^='ctor']")
-    let factory = await new ethers.ContractFactory(abi, bytecode, signer)
-    const loader = bel`<div class=${css.deploying}>${loadingAnimation(colors, 'Publishing to Ethereum network')}</div>`
-    el.replaceWith(loader)
-    try {
-      var allArgs = getArgs(el, 'inputContainer')
-      let args = allArgs.args
-      var instance
-      if (allArgs.overrides) { instance = await factory.deploy(...args, allArgs.overrides) }
-      else { instance = await factory.deploy(...args) }
-      // instance = await factory.deploy(...args)
-      contract = instance
-      let deployed = await contract.deployed()
-      topContainer.innerHTML = ''
-      const theme = { variables: colors }
-      const data = { provider, contract }
-      topContainer.appendChild(makeDeployReceipt({ data, theme }, notify => msg => {
-        console.log(`[${name}] receives:`, msg)
-      }))
-      activateSendTx(contract)
-
-      if (contract) {
-        let buttons = document.getElementsByClassName(css.send)
-        for ( button of buttons ) {
-          button.removeAttribute('disabled')
-        }
-      }
-
-    } catch (e) {
-      loader.replaceWith(ctor)
-    }
-  }
   function activateSendTx(instance) {
     let sendButtons = document.querySelectorAll("[class^='send']")
     for(var i = 0;i < sendButtons.length;i++) {
@@ -571,8 +611,6 @@ input:focus {
   font-size: 2rem;
   text-decoration: none;
 }
-.faIcon {
-}
 .name {
   font-size: var(--nameFontSize);
 }
@@ -596,23 +634,6 @@ input:focus {
   background-color: transparent;
   padding: 0 5px 0 0;
   font-weight: 800;
-}
-.deploy {
-  color: var(--deployColor);
-  font-size: var(--deployFontSize);
-  background-color: var(--deployBackgroundColor);
-  border-radius: 30px;
-  padding: 6px 22px;
-  transition: background-color .6s ease-in-out;
-  position: relative;
-  right: -15px;
-} 
-.deploy:hover {
-  color: var(--deployHoverColor);
-  background-color: var(--deployHoverBackgroundColor);
-}
-.deploy:hover .icon, .send:hover .icon {
-  animation: arrowMove 1s ease-in-out infinite;
 }
 @keyframes arrowMove {
   0% {
@@ -653,6 +674,9 @@ input:focus {
 .send:hover {
   color: var(--sendHoverColor);
   background-color: var(--sendHoverBackgroundColor);
+}
+.send:hover .icon {
+  animation: arrowMove 1s ease-in-out infinite;
 }
 .send .icon {
   font-size: 1.2rem;
@@ -780,56 +804,8 @@ input:focus {
   font-size: 1.2rem;
   position: relative;
 }
-.output {
-  position: absolute;
-  top: 5px;
-  right: 6px;
-  align-self: center;
-}
-.output i {
-  font-size: 1.2rem;
-}
-.output span {
-  display: inline-block;
-  border-radius: 30px;
-  width: 20px;
-  height: 20px;
-  text-align: center;
-}
-.valError {
-  color: var(--valErrorColor);
-  background-color: var(--valErrorBackgroundColor);
-  margin-top: 2px;
-  transition: colors .6s, background-color .6s ease-in-out;
-}
-.valSuccess {
-  color: var(--valSuccessColor);
-  background-color: var(--valSuccessBackgroundColor);
-  transition: colors .6s, background-color .6s ease-in-out;
-}
-.inputContainer {
-  display: grid;
-  grid-template-columns: 25% auto;
-  grid-template-rows: auto;
-  margin-bottom: 22px;
-  position: relative;
-  z-index: 3;
-}
-.inputParam {
-  padding: var(--inputParamPadding);
-  color: var(--inputParamColor);
-  font-size: var(--inputParamFontSize);
-  text-align: var(--inputParamTextAlign);
-  word-break: break-all;
-  transition: color .3s ease-in-out;
-}
-.inputFields {
-  position: relative;
-  display: inline-grid;
-  grid-row-gap: 20px;
-  align-items: center;
-}
 .inputType {
+  margin: 0;
 }
 .inputField {
   font-family: 'Nunito', sans-serif;
@@ -1196,9 +1172,6 @@ const variables = { // defaults
   whiteSmoke: '',
   titleFontSize: '',
   deployTitleFontSize: '',
-  deployColor: '',
-  deployFontSize: '',
-  deployBackgroundColor: '',
   sendColor: '',
   sendFontSize: '',
   sendBackgroundColor: '',

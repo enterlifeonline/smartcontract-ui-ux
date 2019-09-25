@@ -77,7 +77,7 @@ function demo (default_theme = 'darkTheme', default_contract = 'SimpleStorage.so
       scui.appendChild(form)
     } catch (error) {
       scui.innerHTML = ''
-      const data = JSON.stringify(error, 0, 2)
+      const data = JSON.stringify(error.stack.split('\n'), 0, 2)
       scui.appendChild(bel`<pre style="color:red">${data}</pre>`)
     }
   }
