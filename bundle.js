@@ -11092,9 +11092,6 @@ const classes = csjs`
 .txReturnItem:hover .txReturnValue {
   color: rgba(255,255,255, 1);
 }
-.moreInfo {
-  margin: 0;
-}
 .txReturnCount {
   position: absolute;
   right: 15px;
@@ -11185,7 +11182,7 @@ function smartcontractuiFN ({ data, theme = {} }, protocol) {
       After that you will be able to start
       sending/receiving data using the
       contract functions below.`.split('\n').map(x => x.trim()).join(' ')
-      const publishBtn = bel`<button class="${css.btn} ${css.deploy}" title=${msg}>
+      const publishBtn = bel`<button class="${css.button} ${css.deploy}" title=${msg}>
         PUBLISH <i class="${css.icon} fa fa-arrow-right"></i>
       </button>`
       publishBtn.onclick = event => notify({ type: 'publish' })
@@ -11199,6 +11196,7 @@ function smartcontractuiFN ({ data, theme = {} }, protocol) {
         arr.unshift(fn.inputsCtor)
         if (fn.payable) arr.unshift(fn.payable)
       }
+      arr.unshift(bel`<div class=${css.publishInformation}>${msg}</div>`)
       return arr
     }
     var obj = {}
@@ -11217,20 +11215,32 @@ function smartcontractuiFN ({ data, theme = {} }, protocol) {
   }
 }
 const variables = {
+  publishInformationColor: '',
   deployColor: '',
   deployFontSize: '',
   deployBackgroundColor: '',
+  deployHoverColor: '',
+  deployHoverBackgroundColor: '',
 }
 const classes = csjs`
 .smartcontract-ui-fn {
   margin: 0;
 }
-.btn {
+.publishInformation {
+  margin-bottom: 22px;
+  font-size: 1.4rem;
+  color: var(--publishInformationColor);
 }
 .actions {
   position: relative;
-  text-align: right;
+  text-align: center;
   z-index: 3;
+}
+.button {
+  cursor: pointer;
+}
+.button:disabled {
+  cursor: not-allowed;
 }
 .deploy {
   color: var(--deployColor);
@@ -11248,6 +11258,28 @@ const classes = csjs`
 }
 .deploy:hover .icon, .send:hover .icon {
   animation: arrowMove 1s ease-in-out infinite;
+}
+@keyframes arrowMove {
+  0% {
+    right: 0;
+  }
+  50% {
+    right: -10px;
+  }
+  100% {
+    right: 0;
+  }
+}
+@-webki-tkeyframes arrowMove {
+  0% {
+    right: 0;
+  }
+  50% {
+    right: -10px;
+  }
+  100% {
+    right: 0;
+  }
 }`
 },{"./parameter-form":123,"bel":25,"csjs-inject":33,"input-payable":793}],123:[function(require,module,exports){
 const bel = require('bel')
@@ -11469,18 +11501,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
   }
   const sorted = sort(metadata.functions)
 
-  const ctor = bel`<div class="${css.ctor}">
-    <div class=${css.publishInformation}>
-      Publish the contract first (this executes the Constructor function).
-      After that you will be able to start sending/receiving data using the contract functions below.
-    </div>
-    ${metadata.constructorInput}
-    <div class=${css.actions}>
-      <button id="publish" class="${css.button} ${css.deploy}" onclick=${deployContract} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
-        PUBLISH <i class="${css.icon} fa fa-arrow-right"></i>
-      </button>
-    </div>
-  </div>`
+  const ctor = bel`<div class="${css.ctor}">${metadata.constructorInput}</div>`
   const topContainer = bel`<section class=${css.topContainer}>${ctor}</section>`
 
   async function deployContract () { // Create and deploy contract using WEB3
@@ -12028,12 +12049,6 @@ input:focus {
   font-size: var(--titleFontSize);
   margin-bottom: 16px;
 }
-.deployTitle {
-  font-size: var(--deployTitleFontSize);
-  background-color: transparent;
-  padding: 0 5px 0 0;
-  font-weight: 800;
-}
 @keyframes arrowMove {
   0% {
     right: 0;
@@ -12458,7 +12473,7 @@ input[type="range"]:focus::-ms-fill-upper {
   z-index: 3;
 }
 .txReturnField {
-
+  margin: 0;
 }
 .txReturnTitle {
   color: var(--txReturnTitleColor);
@@ -12510,11 +12525,6 @@ input[type="range"]:focus::-ms-fill-upper {
   border-radius: 30px;
   color: #ffffff;
   background-color: rgba(255,255,255, .15);
-}
-.publishInformation {
-  margin-bottom: 22px;
-  font-size: 1.4rem;
-  color: var(--publishInformationColor);
 }
 .topContainer .focus .inputParam, .topContainer .focus:hover .inputParam,
 .fnContainer .focus .inputParam, .fnContainer .focus:hover .inputParam
@@ -12570,7 +12580,6 @@ const variables = { // defaults
   nameFontSize: '',
   whiteSmoke: '',
   titleFontSize: '',
-  deployTitleFontSize: '',
   sendColor: '',
   sendFontSize: '',
   sendBackgroundColor: '',

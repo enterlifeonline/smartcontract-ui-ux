@@ -70,18 +70,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
   }
   const sorted = sort(metadata.functions)
 
-  const ctor = bel`<div class="${css.ctor}">
-    <div class=${css.publishInformation}>
-      Publish the contract first (this executes the Constructor function).
-      After that you will be able to start sending/receiving data using the contract functions below.
-    </div>
-    ${metadata.constructorInput}
-    <div class=${css.actions}>
-      <button id="publish" class="${css.button} ${css.deploy}" onclick=${deployContract} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
-        PUBLISH <i class="${css.icon} fa fa-arrow-right"></i>
-      </button>
-    </div>
-  </div>`
+  const ctor = bel`<div class="${css.ctor}">${metadata.constructorInput}</div>`
   const topContainer = bel`<section class=${css.topContainer}>${ctor}</section>`
 
   async function deployContract () { // Create and deploy contract using WEB3
@@ -629,12 +618,6 @@ input:focus {
   font-size: var(--titleFontSize);
   margin-bottom: 16px;
 }
-.deployTitle {
-  font-size: var(--deployTitleFontSize);
-  background-color: transparent;
-  padding: 0 5px 0 0;
-  font-weight: 800;
-}
 @keyframes arrowMove {
   0% {
     right: 0;
@@ -1059,7 +1042,7 @@ input[type="range"]:focus::-ms-fill-upper {
   z-index: 3;
 }
 .txReturnField {
-
+  margin: 0;
 }
 .txReturnTitle {
   color: var(--txReturnTitleColor);
@@ -1111,11 +1094,6 @@ input[type="range"]:focus::-ms-fill-upper {
   border-radius: 30px;
   color: #ffffff;
   background-color: rgba(255,255,255, .15);
-}
-.publishInformation {
-  margin-bottom: 22px;
-  font-size: 1.4rem;
-  color: var(--publishInformationColor);
 }
 .topContainer .focus .inputParam, .topContainer .focus:hover .inputParam,
 .fnContainer .focus .inputParam, .fnContainer .focus:hover .inputParam
@@ -1171,7 +1149,6 @@ const variables = { // defaults
   nameFontSize: '',
   whiteSmoke: '',
   titleFontSize: '',
-  deployTitleFontSize: '',
   sendColor: '',
   sendFontSize: '',
   sendBackgroundColor: '',
