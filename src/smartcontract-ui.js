@@ -302,7 +302,6 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     let visible = container.querySelector(`[class^=${css.visible}]`)
     let logs = visible.querySelector(`[class^=${css.logs}]`)
     let txReturn = logs.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
-    // let fields = container.querySelectorAll(`[class^=${css.inputContainer}]`)
     let fields = [...container.querySelectorAll(`.${css.inputContainer}`)]
     let el = bel`<div class=${css.txReturnItem}></div>`
     let timer = new Date
@@ -340,18 +339,8 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     let visible = container.querySelector(`.${css.visible}`)
     let logs = visible.querySelector(`.${css.logs}`)
     let txReturn = logs.querySelector(`.${css.txReturn}`) || bel`<div class=${css.txReturn}></div>`
-
-    // if (!contract) {
-    //   let deploy = document.querySelector("#publish")
-    //   deploy.classList.add(css.bounce)
-    //   setTimeout(()=>deploy.classList.remove(css.bounce), 3500)
-    //   return 
-    // }
     
     // if deployed
-    // container.insertBefore(txReturn, sibling)
-    // container.appendChild(txReturn)
-    // txReturn.appendChild(loader)
     logs.appendChild(txReturn)
     txReturn.appendChild(loader)
     logs.scrollTop = logs.scrollHeight
@@ -437,7 +426,6 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       if (txReturn) {
         txReturn.classList.remove(css.visible)
         txReturn.classList.add(css.hidden)
-        txReturn.style.minHeight = 0
       }
     }
     function addLogs (el) {
@@ -445,7 +433,6 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       if (txReturn) {
         txReturn.classList.remove(css.hidden)
         txReturn.classList.add(css.visible)
-        txReturn.style.minHeight = '80px'
       }
     }
   }

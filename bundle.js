@@ -139,7 +139,7 @@ button {
   box-sizing: border-box;
 }`
 
-},{"../":203,"bel":24,"contracts":16,"csjs-inject":31,"get-compiler-version":17,"solc-js":150,"theme":19,"theme-switcher":18}],2:[function(require,module,exports){
+},{"../":154,"bel":24,"contracts":16,"csjs-inject":31,"get-compiler-version":17,"solc-js":89,"theme":19,"theme-switcher":18}],2:[function(require,module,exports){
 module.exports = `
 pragma solidity ^0.4.17;
 
@@ -2201,7 +2201,7 @@ function getVersion (releases, code) {
     return releases[0]
   }
 }
-},{"solc-js":150}],18:[function(require,module,exports){
+},{"solc-js":89}],18:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require('csjs-inject')
 
@@ -2582,7 +2582,7 @@ function setCacheTime(caching, url) {
     window.localStorage[url] = timestamp;
   }
 }
-},{"kv-idb":125}],21:[function(require,module,exports){
+},{"kv-idb":64}],21:[function(require,module,exports){
 module.exports = {
   promiseAjax: require('./promiseAjax')
 };
@@ -9243,7 +9243,7 @@ function csjsInserter() {
 module.exports = csjsInserter;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"csjs":34,"insert-css":123}],30:[function(require,module,exports){
+},{"csjs":34,"insert-css":62}],30:[function(require,module,exports){
 'use strict';
 
 module.exports = require('csjs/get-css');
@@ -10235,7 +10235,7 @@ module.exports = {
   fromWei: fromWei,
   toWei: toWei
 };
-},{"bn.js":51,"number-to-bn":127}],51:[function(require,module,exports){
+},{"bn.js":51,"number-to-bn":66}],51:[function(require,module,exports){
 (function (module, exports) {
   'use strict';
 
@@ -13983,6 +13983,2086 @@ var closeRE = RegExp('^(' + [
 function selfClosing (tag) { return closeRE.test(tag) }
 
 },{"hyperscript-attribute-to-property":52}],54:[function(require,module,exports){
+const bel = require('bel')
+const csjs = require('csjs-inject')
+const validator = require('solidity-validator')
+
+module.exports = displayAddressInput
+
+function displayAddressInput ({ theme: { classes: css }, cb, focus, blur }) {
+  const input = bel`<div class=${css.addressField}>
+    <input class=${css.inputField} data-type="address" onclick="${(e)=>e.target.select()}" onblur=${(e)=>blur(e)} onfocus=${(e)=>focus(e)} oninput=${validate} placeholder='0x633...'>
+  </div>`
+  return input
+  function validate (e) {
+    const value = e.target.value
+    cb(validator.getMessage('address', value), e.target, value)
+  }
+}
+
+},{"bel":24,"csjs-inject":31,"solidity-validator":125}],55:[function(require,module,exports){
+const bel = require('bel')
+const csjs = require('csjs-inject')
+const validator = require('solidity-validator')
+
+module.exports = displayByteInput
+
+function displayByteInput ({ theme: { classes: css }, type, cb, focus, blur }) {
+  return input = bel`<div class=${css.byteField}> <input class=${css.inputField} data-type=${type} onclick="${(e)=>e.target.select()}" onfocus=${(e)=>focus(e)} onblur=${(e)=>blur(e)} oninput=${validate} placeholder='0x...'> </div>`
+  function validate (e) {
+    let value = e.target.value
+    cb(validator.getMessage(type, value), e.target, value)
+  }
+}
+
+},{"bel":24,"csjs-inject":31,"solidity-validator":125}],56:[function(require,module,exports){
+const bel = require('bel')
+const csjs = require('csjs-inject')
+const inputAddress = require("input-address")
+const inputInteger = require("input-integer")
+const inputBoolean = require("input-boolean")
+const inputString = require("input-string")
+const inputByte = require("input-byte")
+const validator = require('solidity-validator')
+
+module.exports = displayArrayInput
+
+function displayArrayInput ({ theme: { classes: css, colors }, type, cb, focus, blur }) {
+  const container = bel`<div class=${css.arrayContainer}></div>`
+  const arr = getParsedArray(type) // uint8[2][3][] returns  ['', 3, 2]
+  next({ container, arr, cb })
+  return container
+  function next ({ container, arr, cb }) {
+    var len = arr.shift()
+    if (len === '') {
+      len = 1
+      container.appendChild(plusMinus({ container, arr, cb }))
+    }
+    for (var i = 0; i < len; i++) append({ container, arr: [...arr], cb })
+  }
+  function append ({ container, arr, cb }) {
+    if (arr.length) { // recursive step
+      const innerContainer = bel`<div class="${css.arrayContainer}"></div>`
+      container.appendChild(innerContainer)
+      next({ container: innerContainer, arr, cb, blur })
+    } else { // final step (stop recursion)
+      container.appendChild(returnInputFields({ classes: css, colors }, type, cb, focus, blur))
+    }
+  }
+  function plusMinus ({ container, arr, cb }) {
+    return bel`<div class=${css.arrayPlusMinus}>
+        <i class="${css.arrayMinus} fa fa-minus" onclick=${e=>removeLast(container)}></i>
+        <i class="${css.arrayPlus} fa fa-plus" onclick=${e=>append({ container, arr: [...arr], cb })}></i>
+      </div>`
+  }
+  function removeLast (node) {
+    if (node.children.length > 2) node.removeChild(node.lastChild)
+  }
+}
+function returnInputFields (theme, type, cb, focus, blur) {
+  if (type.includes("int")) return inputInteger({ theme, type, cb, focus, blur })
+  else if (type.includes("byte")) return inputByte({ theme, type, cb, focus, blur })
+  else if (type.includes("string")) return inputString({ theme, type, cb, focus, blur })
+  else if (type.includes("bool")) return inputBoolean({ theme, type, cb, focus, blur })
+  else if (type.includes("fixed")) return inputInteger({ theme, type, cb, focus, blur })
+  else if (type.includes("address")) return inputAddress({ theme, type, cb, focus, blur })
+}
+function getParsedArray (type) {
+  const arr = []
+  const i = type.search(/\[/) // find where array starts (bool[2][])
+  const basicType = type.split('[')[0] // split to get basic type (bool, uint8)
+  const suffix = type.slice(i) // slice to get the remaining part = suffix ([2][][][])
+  suffix.split('][').forEach((x, i)=>{
+    if (x.search(/\d/) != -1) { arr.push(x.charAt(x.search(/\d/))) }  // if digit is present, push the digit
+    else { arr.push('') } // if no, push empty string
+  })
+  return arr.reverse()
+}
+
+},{"bel":24,"csjs-inject":31,"input-address":54,"input-boolean":57,"input-byte":55,"input-integer":59,"input-string":61,"solidity-validator":125}],57:[function(require,module,exports){
+const bel = require('bel')
+const csjs = require('csjs-inject')
+const validator = require('solidity-validator')
+
+module.exports = displayBooleanInput
+
+function displayBooleanInput ({ theme: { classes: css, colors }, type, cb, focus }) {
+  const boolFalse = bel `<div class="${css.columns} ${css.false}" data-state="" data-type="boolean" value="false" onclick=${toggle}>false</div>`
+  const boolTrue = bel `<div class="${css.columns} ${css.true}" data-state="" data-type="boolean" value="true" onclick=${toggle}>true</div>`
+  const input = bel`<div class=${css.booleanField} onclick=${(e)=>focus(e)}>
+    ${boolFalse}
+    ${boolTrue}
+  </div>`
+  return input
+
+  function toggle (e) {
+    let value = e.target.innerHTML
+    cb(validator.getMessage('boolean', value), e.target, value)
+    if (value === 'true') {
+      boolFalse.style.color = colors.booleanFieldColor
+      boolFalse.style.backgroundColor = colors.booleanFieldBackgroundColor
+      boolFalse.dataset.state = ""
+      boolTrue.dataset.state = "active"
+      boolTrue.style.color = colors.booleanFieldActiveColor
+      boolTrue.style.backgroundColor = colors.booleanFieldTruedBackgroundColor
+    } else if (value === 'false') {
+      boolTrue.style.color = colors.booleanFieldColor
+      boolTrue.style.backgroundColor = colors.booleanFieldBackgroundColor
+      boolTrue.dataset.state = ""
+      boolFalse.dataset.state = "active"
+      boolFalse.style.color = colors.booleanFieldActiveColor
+      boolFalse.style.backgroundColor = colors.booleanFieldFalsedBackgroundColor
+    }
+  }
+
+}
+
+},{"bel":24,"csjs-inject":31,"solidity-validator":125}],58:[function(require,module,exports){
+arguments[4][55][0].apply(exports,arguments)
+},{"bel":24,"csjs-inject":31,"dup":55,"solidity-validator":125}],59:[function(require,module,exports){
+const bel = require('bel')
+const csjs = require('csjs-inject')
+const validator = require('solidity-validator')
+const bigNumber = require('bignumber.js')
+
+module.exports = displayIntegerInput
+
+function displayIntegerInput ({ theme: { classes: css }, type, cb, focus, blur }) {
+  const splitType = type.split('[')[0] // split to get basic type (bool, uint8)
+  const min = validator.getRange(splitType).MIN
+  const max = validator.getRange(splitType).MAX
+  const title = `Valid values for type ${splitType} are from ${min} to ${max}`
+  const num = bel`<input data-type=${splitType} type="number" class=${css.integerValue} value="0" onclick="${(e)=>e.target.select()}" onchange=${(e)=>validate(e)} onfocus=${(e)=>focus(e)} onblur=${(e)=>blur(e)} oninput=${(e)=>sliderUpdate(e, splitType)} onkeydown=${(e)=>keysUpdating(e, splitType)}>`
+  const slider = bel`<input data-type=${splitType} class=${css.integerSlider} type="range" title=${title} min=${min} max=${max} value="0" step=1 onchange=${(e)=>validate(e)} onblur=${(e)=>blur(e)} onfocus=${(e)=>focus(e)} oninput=${(e)=>numUpdate(e, splitType)}>`
+  return bel`<div class=${css.integerField}>
+    ${slider}
+    ${num}
+  </div>`
+  function numUpdate (e, splitType) {
+    num.value = num.title = bigNumber(e.target.value).toFixed(0)
+    validate(e, splitType)
+  }
+  function validate (e) {
+    const value = e.target.value
+    cb(validator.getMessage(splitType, value), e.target, value)
+  }
+  function keysUpdating (e, splitType) {
+    const key = e.which
+    const val = parseInt(e.target.value)
+    if (key === 38 && val != slider.max) {
+      slider.value = num.value = val + 1
+    }
+    else if (key === 40 && val != slider.min) {
+      slider.value = num.value = val - 1
+    }
+    validate(e)
+  }
+  function sliderUpdate (e, splitType) {
+    if (e.target.value === '') {
+      slider.value = num.value = 0
+    } else {
+      slider.value = e.target.value
+    }
+    validate(e, splitType)
+  }
+}
+
+},{"bel":24,"bignumber.js":25,"csjs-inject":31,"solidity-validator":125}],60:[function(require,module,exports){
+const bel = require("bel")
+
+module.exports = inputPayable
+
+function inputPayable ({ theme: { classes: css }, label, focus, blur }) {
+
+  const input = bel`
+    <div class=${css.inputContainer}>
+      <label class=${css.inputParam} title="data type: ${label}">value</label>
+      <div class=${css.inputArea}>
+        <input class=${css.inputField} type="number" placeholder="999" onfocus=${(e)=>focus(e)} onblur=${(e)=>blur(e)} oninput=${validate}>
+        ${currencySelector(css)}
+        <div class=${css.ethIcon} title="Select amount you want to send with this function!"><i class="fab fa-ethereum"></i></div>
+      </div>
+    </div>`
+
+  return input
+  function validate (e) {
+    // @TODO
+  }
+
+  function currencySelector (css) {
+    var button = bel`
+      <select class=${css.currency}>
+        <option value="wei">wei</option>
+        <option value="k-wei">k-wei</option>
+        <option value="m-wei">m-wei</option>
+        <option value="g-wei">g-wei</option>
+        <option value="micro">micro</option>
+        <option value="milli">milli</option>
+        <option value="ether">ether</option>
+        <option value="k-ether">k-ether</option>
+        <option value="m-ether">m-ether</option>
+        <option value="g-ether">g-ether</option>
+        <option value="t-ether">t-ether</option>
+      </select>`
+    return button
+  }
+}
+
+
+},{"bel":24}],61:[function(require,module,exports){
+const bel = require('bel')
+const csjs = require('csjs-inject')
+const validator = require('solidity-validator')
+
+module.exports = displayStringInput
+
+function displayStringInput ({ theme: { classes: css }, cb, focus, blur }) {
+  const input = bel`<div class=${css.stringField}>
+    <input class=${css.inputField} data-type="string" onclick="${(e)=>e.target.select()}" onblur=${(e)=>blur(e)} onfocus=${(e)=>focus(e)} oninput=${validate} placeholder='abc'>
+  </div>`
+  return input
+  function validate (e) {
+    const value = e.target.value
+    cb(validator.getMessage('string', value), e.target, value)
+  }
+}
+
+},{"bel":24,"csjs-inject":31,"solidity-validator":125}],62:[function(require,module,exports){
+var inserted = {};
+
+module.exports = function (css, options) {
+    if (inserted[css]) return;
+    inserted[css] = true;
+    
+    var elem = document.createElement('style');
+    elem.setAttribute('type', 'text/css');
+
+    if ('textContent' in elem) {
+      elem.textContent = css;
+    } else {
+      elem.styleSheet.cssText = css;
+    }
+    
+    var head = document.getElementsByTagName('head')[0];
+    if (options && options.prepend) {
+        head.insertBefore(elem, head.childNodes[0]);
+    } else {
+        head.appendChild(elem);
+    }
+};
+
+},{}],63:[function(require,module,exports){
+/**
+ * Returns a `Boolean` on whether or not the a `String` starts with '0x'
+ * @param {String} str the string input value
+ * @return {Boolean} a boolean if it is or is not hex prefixed
+ * @throws if the str input is not a string
+ */
+module.exports = function isHexPrefixed(str) {
+  if (typeof str !== 'string') {
+    throw new Error("[is-hex-prefixed] value must be type 'string', is currently type " + (typeof str) + ", while checking isHexPrefixed.");
+  }
+
+  return str.slice(0, 2) === '0x';
+}
+
+},{}],64:[function(require,module,exports){
+const indexedDB = window.indexedDB
+const console = window.console
+
+module.exports = kvidb
+
+const dbname = 'kvidb'
+// const dbopts = { keyPath: 'key' }
+const version = 1
+
+function kvidb (opts) {
+  const name = opts ? opts.name || ('' + opts) : 'store'
+  const scope = `${dbname}-${name}`
+  var IDB
+  const makeDB = done => {
+    var idb = indexedDB.open(dbname, version)
+    idb.onerror = e => console.error(`[${dbname}]`, idb.error)
+    idb.onupgradeneeded = () => idb.result.createObjectStore(scope/*, dbopts*/)
+    idb.onsuccess = () => done(IDB = idb.result)
+  }
+  const use = (mode, done) => {
+    const next = (IDB, tx) => (tx = IDB.transaction([scope], mode),
+      done(tx.objectStore(scope), tx))
+    IDB ? next(IDB) : makeDB(next)
+  }
+  const api = {
+    get: (key, done) => use('readonly', (store, tx) => {
+      const req = store.get('' + key)
+      tx.oncomplete = e => next(req.error, req.result)
+      const next = (e, x) => {
+        e ? done(e) : x === undefined ? done(`key "${key}" is undefined`)
+        : done(null, x)
+      }
+    }),
+    put: (key, val, done) => val === undefined ? done('`value` is undefined')
+      : use('readwrite', (store, tx) => {
+        const req = store.put(val, '' + key)
+        tx.oncomplete = e => done(req.error, !req.error)
+    }),
+    del: (key, done) => api.get('' + key, (e, x) => {
+      e ? done(e) : use('readwrite', (store, tx) => {
+        const req = store.delete('' + key)
+        tx.oncomplete = e => done(req.error, !req.error)
+      })
+    }),
+    clear: done => use('readwrite',  (store, tx) => {
+      const req = store.clear()
+      tx.oncomplete = e => done(req.error, !req.error)
+    }),
+    length: done => use('readwrite',  (store, tx) => {
+      const req = store.count()
+      tx.oncomplete = e => done(req.error, req.result)
+    }),
+    close: done => (IDB ? IDB.close() : makeDB(IDB => IDB.close()), done(null, true)),
+    batch: (ops, done) => done('@TODO: implement `.batch(...)`'),
+    keys: done => use('readonly', (store, tx, keys = []) => {
+      const openCursor = (store.openKeyCursor || store.openCursor)
+      const req = openCursor.call(store)
+      tx.oncomplete = e => done(req.error, req.error ? undefined : keys)
+      req.onsuccess = () => {
+        const x = req.result
+        if (x) (keys.push(x.key), x.continue())
+      }
+    })
+    // key: (n, done) => (n < 0) ? done(null) : use('readonly', store => {
+    //   var advanced = false
+    //   var req = store.openCursor()
+    //   req.onsuccess = () => {
+    //     var cursor = req.result
+    //     if (!cursor) return
+    //     if (n === 0 || advanced) return // Either 1) maybe return first key, or 2) we've got the nth key
+    //     advanced = true // Otherwise, ask the cursor to skip ahead n records
+    //     cursor.advance(n)
+    //   }
+    //   req.onerror = () => (console.error('Error in asyncStorage.key(): '), req.error.name)
+    //   req.onsuccess = () => done((req.result || {}).key || null)
+    // }),
+    // This would be store.getAllKeys(), but it isn't supported by Edge or Safari.
+    // And openKeyCursor isn't supported by Safari.
+    // tx.oncomplete = () => done(null, keys)
+  }
+  return api
+}
+
+},{}],65:[function(require,module,exports){
+arguments[4][51][0].apply(exports,arguments)
+},{"dup":51}],66:[function(require,module,exports){
+var BN = require('bn.js');
+var stripHexPrefix = require('strip-hex-prefix');
+
+/**
+ * Returns a BN object, converts a number value to a BN
+ * @param {String|Number|Object} `arg` input a string number, hex string number, number, BigNumber or BN object
+ * @return {Object} `output` BN object of the number
+ * @throws if the argument is not an array, object that isn't a bignumber, not a string number or number
+ */
+module.exports = function numberToBN(arg) {
+  if (typeof arg === 'string' || typeof arg === 'number') {
+    var multiplier = new BN(1); // eslint-disable-line
+    var formattedString = String(arg).toLowerCase().trim();
+    var isHexPrefixed = formattedString.substr(0, 2) === '0x' || formattedString.substr(0, 3) === '-0x';
+    var stringArg = stripHexPrefix(formattedString); // eslint-disable-line
+    if (stringArg.substr(0, 1) === '-') {
+      stringArg = stripHexPrefix(stringArg.slice(1));
+      multiplier = new BN(-1, 10);
+    }
+    stringArg = stringArg === '' ? '0' : stringArg;
+
+    if ((!stringArg.match(/^-?[0-9]+$/) && stringArg.match(/^[0-9A-Fa-f]+$/))
+      || stringArg.match(/^[a-fA-F]+$/)
+      || (isHexPrefixed === true && stringArg.match(/^[0-9A-Fa-f]+$/))) {
+      return new BN(stringArg, 16).mul(multiplier);
+    }
+
+    if ((stringArg.match(/^-?[0-9]+$/) || stringArg === '') && isHexPrefixed === false) {
+      return new BN(stringArg, 10).mul(multiplier);
+    }
+  } else if (typeof arg === 'object' && arg.toString && (!arg.pop && !arg.push)) {
+    if (arg.toString(10).match(/^-?[0-9]+$/) && (arg.mul || arg.dividedToIntegerBy)) {
+      return new BN(arg.toString(10), 10);
+    }
+  }
+
+  throw new Error('[number-to-bn] while converting number ' + JSON.stringify(arg) + ' to BN.js instance, error: invalid number value. Value must be an integer, hex string, BN or BigNumber instance. Note, decimals are not supported.');
+}
+
+},{"bn.js":65,"strip-hex-prefix":136}],67:[function(require,module,exports){
+module.exports = window.crypto;
+},{}],68:[function(require,module,exports){
+module.exports = require('crypto');
+},{"crypto":67}],69:[function(require,module,exports){
+var randomHex = function(size, callback) {
+    var crypto = require('./crypto.js');
+    var isCallback = (typeof callback === 'function');
+
+    
+    if (size > 65536) {
+        if(isCallback) {
+            callback(new Error('Requested too many random bytes.'));
+        } else {
+            throw new Error('Requested too many random bytes.');
+        }
+    };
+
+
+    // is node
+    if (typeof crypto !== 'undefined' && crypto.randomBytes) {
+
+        if(isCallback) {
+            crypto.randomBytes(size, function(err, result){
+                if(!err) {
+                    callback(null, '0x'+ result.toString('hex'));
+                } else {
+                    callback(error);
+                }
+            })
+        } else {
+            return '0x'+ crypto.randomBytes(size).toString('hex');
+        }
+
+    // is browser
+    } else {
+        var cryptoLib;
+
+        if (typeof crypto !== 'undefined') {
+            cryptoLib = crypto;
+        } else if(typeof msCrypto !== 'undefined') {
+            cryptoLib = msCrypto;
+        }
+
+        if (cryptoLib && cryptoLib.getRandomValues) {
+            var randomBytes = cryptoLib.getRandomValues(new Uint8Array(size));
+            var returnValue = '0x'+ Array.from(randomBytes).map(function(arr){ return arr.toString(16); }).join('');
+
+            if(isCallback) {
+                callback(null, returnValue);
+            } else {
+                return returnValue;
+            }
+
+        // not crypto object
+        } else {
+            var error = new Error('No "crypto" object available. This Browser doesn\'t support generating secure random bytes.');
+
+            if(isCallback) {
+                callback(error);
+            } else {
+               throw error;
+            }
+        }
+    }
+};
+
+
+module.exports = randomHex;
+
+},{"./crypto.js":68}],70:[function(require,module,exports){
+module.exports = {
+  type: 'github',
+  parser: require('./parser'),
+  resolver: require('./resolver'),
+  match: /^(https?:\/\/)?(www.)?github.com\/([^/]*\/[^/]*)\/(.*)/
+};
+},{"./parser":71,"./resolver":72}],71:[function(require,module,exports){
+const replaceContent = require('solc-import').replaceContent
+const resolver = require('./resolver')
+// https://github.com/<owner>/<repo>/<path_to_the_file>
+
+module.exports = async function(importPath) {
+  const [, , , root, path] = require('./index').match.exec(importPath)
+
+  let url = `https://raw.githubusercontent.com/${root}/master/${path}`
+  try {
+    let data = await getData(url)
+    if (isSymbolicLink(data)) {
+      const tmps = url.split('/')
+      const filename = tmps[tmps.length - 1]
+      url = url.replace(filename, data)
+      data = await getData(url)
+    } else {
+      data = replaceContent(data, importPath, resolver)
+    }
+    return data
+  } catch (error) {
+    throw error
+  }
+}
+
+async function getData(url) {
+  let response = await fetch(url, { method: 'GET' })
+  let data = await response.text()
+  if (!response.ok || response.status !== 200) throw Error('Content ' + data)
+  return data
+}
+
+function isSymbolicLink(data) {
+  if (data.length < 50 && data.indexOf('.sol')) return true
+  return false
+}
+
+// async function getSource(importPath, root, path) {
+//   const url = `https://api.github.com/repos/${root}/contents/${path}`;
+//   // console.log('url:', url);
+//   try {
+//     const response = await fetch(url, { method: 'GET' });
+//     let data = await response.text();
+//     if (!response.ok || response.status !== 200) throw Error(data);
+//     data = JSON.parse(data);
+//     data.content = window.atob(data.content);
+//     data.content = replaceContent(data.content, importPath, pathResolve);
+//     if ('content' in data) return data.content;
+//     if ('message' in data) throw Error(data.message);
+//     throw Error('Content not received');
+//   } catch (error) {
+//     // Unknown transport error
+//     throw error;
+//   }
+// }
+
+},{"./index":70,"./resolver":72,"solc-import":85}],72:[function(require,module,exports){
+module.exports = function (content, from, subImportPath) {
+  let newContent = content;
+  let url = new window.URL(subImportPath, from);
+  let fixedPath = url.href;
+  newContent = newContent.replace(`import '${subImportPath}'`, `import '${fixedPath}'`);
+  newContent = newContent.replace(`import "${subImportPath}"`, `import "${fixedPath}"`);
+  return newContent;
+};
+},{}],73:[function(require,module,exports){
+module.exports = {
+  type: 'http',
+  parser: require('./parser'),
+  resolver: require('./resolver'),
+  match: /^(http|https?:\/\/?(.*))$/
+};
+
+// const match = /^(http?:\/\/?(.*))$/;
+},{"./parser":74,"./resolver":75}],74:[function(require,module,exports){
+const replaceContent = require('solc-import').replaceContent;
+const resolver = require('./resolver');
+
+module.exports = async function (importPath) {
+  const [, url,] = require('./index').match.exec(importPath);
+  try {
+    const response = await fetch(url, { method: 'GET' });
+    let data = await response.text();
+    if (!response.ok || response.status !== 200) throw Error('Content ' + data);
+    data = replaceContent(data, importPath, resolver);
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+},{"./index":73,"./resolver":75,"solc-import":85}],75:[function(require,module,exports){
+arguments[4][72][0].apply(exports,arguments)
+},{"dup":72}],76:[function(require,module,exports){
+module.exports = {
+  type: 'ipfs',
+  parser: require('./parser'),
+  resolver: require('./resolver'),
+  match: /^(ipfs:\/\/?.+)/
+};
+},{"./parser":77,"./resolver":78}],77:[function(require,module,exports){
+module.exports = async function (importPath) {
+  let [, url] = require('./index').match.exec(importPath);
+  // replace ipfs:// with /ipfs/
+  url = url.replace(/^ipfs:\/\/?/, 'ipfs/');
+  url = 'https://gateway.ipfs.io/' + url;
+
+  try {
+    const response = await fetch(url, { method: 'GET' });
+    const data = await response.text();
+    if (!response.ok || response.status !== 200) throw Error(data);
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+},{"./index":76}],78:[function(require,module,exports){
+arguments[4][72][0].apply(exports,arguments)
+},{"dup":72}],79:[function(require,module,exports){
+module.exports = {
+  type: 'swarm',
+  parser: require('./parser'),
+  resolver: require('./resolver'),
+  match: /^(bzz[ri]?:\/\/?(.*))$/
+};
+},{"./parser":80,"./resolver":81}],80:[function(require,module,exports){
+module.exports = async function (importPath) {
+  const [, url,] = require('./index').match.exec(importPath);
+  try {
+    let content = await swarmgw.get(url);
+    return content;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const swarmgw = swarmgwMaker();
+
+
+async function getFile(gateway, url) {
+  const httpsURL = gateway + '/' + url;
+  try {
+    const response = await fetch(httpsURL, { method: 'GET' });
+    const data = await response.text();
+    if (!response.ok || response.status !== 200) throw Error(data);
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+function swarmgwMaker(opts) {
+  opts = opts || {};
+  var gateway;
+  if (opts.gateway) {
+    gateway = opts.gateway;
+  } else if (opts.mode === 'http') {
+    gateway = 'http://swarm-gateways.net';
+  } else {
+    gateway = 'https://swarm-gateways.net';
+  }
+  return {
+    get: async function (url) {
+      return await getFile(gateway, url);
+    }
+  };
+}
+
+},{"./index":79}],81:[function(require,module,exports){
+arguments[4][72][0].apply(exports,arguments)
+},{"dup":72}],82:[function(require,module,exports){
+const getImports = require('./getImports');
+const isExistImport = require('./isExistImport');
+
+module.exports = combineSource;
+
+async function combineSource(source, getImportContent) {
+  try {
+    const allImportPath = getImports(source);
+    let allSubImportPath = [];
+    let sourceMap = new Map();
+
+    for (let importPath of allImportPath) {
+      let content = await getImportContent(importPath);
+      allSubImportPath = allSubImportPath.concat(getImports(content));
+      sourceMap.set(importPath, content);
+    }
+
+    sourceMap = await getMergeSubImportMap(allSubImportPath, sourceMap, getImportContent);
+
+    let sources = [];
+    for (let [key, value] of sourceMap) {
+      sources.push({ path: key, content: value });
+    }
+    return sources;
+  } catch (error) {
+    throw(error);
+  }
+}
+
+async function getMergeSubImportMap(allSubImportPath, sourceMap, getImportContent) {
+  if (allSubImportPath.length != 0) {
+    let search = true;
+    let nextAllSubImportPath = [];
+    while (search) {
+      for (let subImportPath of allSubImportPath) {
+        if (sourceMap.has(subImportPath)) break;
+        let content = await getImportContent(subImportPath);
+        sourceMap.set(subImportPath, content);
+        if (isExistImport(content)) {
+          let sub2ImportPath = getImports(content);
+          nextAllSubImportPath = nextAllSubImportPath.concat(sub2ImportPath);
+        }
+      }
+      search = nextAllSubImportPath.length != 0;
+      allSubImportPath = nextAllSubImportPath;
+      nextAllSubImportPath = [];
+    }
+  }
+  return sourceMap;
+}
+},{"./getImports":83,"./isExistImport":86}],83:[function(require,module,exports){
+module.exports = getImports;
+
+function getImports(source) {
+  let matches = [];
+  let ir = /^(.*import){1}(.+){0,1}\s['"](.+)['"];/gm;
+  let match = null;
+  while ((match = ir.exec(source))) {
+    matches.push(match[3]);
+  }
+  return matches;
+}
+},{}],84:[function(require,module,exports){
+const combineSource = require('./combineSource');
+
+module.exports = getReadCallback;
+
+async function getReadCallback(sourceCode, getImportContent) {
+  let sources = await combineSource(sourceCode, getImportContent);
+
+  // import: it must be sync function
+  function readCallback(path) {
+    for (let source of sources) {
+      if (source.path == path) {
+        return { contents: source.content }; 
+      } 
+    }
+  }
+  return readCallback;
+}
+},{"./combineSource":82}],85:[function(require,module,exports){
+module.exports = {
+  combineSource: require('./combineSource'),
+  getImports: require('./getImports'),
+  getReadCallback: require('./getReadCallback'),
+  isExistImport: require('./isExistImport'),
+  replaceContent: require('./replaceContent')
+};
+},{"./combineSource":82,"./getImports":83,"./getReadCallback":84,"./isExistImport":86,"./replaceContent":87}],86:[function(require,module,exports){
+const getImports = require('./getImports');
+
+module.exports = isExistImport;
+
+function isExistImport(sourcecode) {
+  const allImportPath = getImports(sourcecode);
+  return allImportPath.length != 0;
+}
+},{"./getImports":83}],87:[function(require,module,exports){
+const getImports = require('./getImports');
+const isExistImport = require('./isExistImport');
+
+module.exports = replaceContent;
+
+function replaceContent(content, from, resolver) {
+  let newContent = content;
+  if (isExistImport(content)) {
+    const allSubImportPath = getImports(content);
+    for (let subImportPath of allSubImportPath) {
+      if (isExplicitlyRelative(subImportPath)) {
+        newContent = resolver(newContent, from, subImportPath);
+      }
+    }
+  }
+  return newContent;
+}
+
+function isExplicitlyRelative(importPath) {
+  return importPath.indexOf('.') === 0;
+}
+},{"./getImports":83,"./isExistImport":86}],88:[function(require,module,exports){
+const solcImport = require('solc-import');
+const solcResolver = require('solc-resolver');
+const solcjsCore = require('solcjs-core');
+
+module.exports = getCompile;
+
+function getCompile(oldSolc) {
+  let compile;
+  Object.keys(oldSolc).forEach(key => {
+    if (key != 'compile') return;
+
+    compile = async function (sourcecode = '', getImportContent) {
+      if (solcImport.isExistImport(sourcecode)) {
+        if (getImportContent == undefined) {
+          getImportContent = getContent();
+        } else if (typeof getImportContent !== 'function') {
+          throw Error('getContent should be a funcion.');
+        }
+      }
+
+      let readCallback = await solcjsCore.getReadCallback(
+        sourcecode,
+        getImportContent
+      );
+      return solcjsCore.wrapperCompile(oldSolc, sourcecode, readCallback);
+    };
+  });
+  return compile;
+}
+
+function getContent() {
+  const ResolverEngine = require('solc-resolver').resolverEngine;
+  let resolverEngine = new ResolverEngine();
+
+  let resolveGithub = require('resolve-github');
+  resolverEngine.addResolver(resolveGithub);
+
+  let resolveHttp = require('resolve-http');
+  resolverEngine.addResolver(resolveHttp);
+
+  let resolveIPFS = require('resolve-ipfs');
+  resolverEngine.addResolver(resolveIPFS);
+
+  let resolveSwarm = require('resolve-swarm');
+  resolverEngine.addResolver(resolveSwarm);
+
+  const getImportContent = async function (path) {
+    return await resolverEngine.require(path);
+  };
+
+  return getImportContent;
+}
+
+},{"resolve-github":70,"resolve-http":73,"resolve-ipfs":76,"resolve-swarm":79,"solc-import":85,"solc-resolver":91,"solcjs-core":111}],89:[function(require,module,exports){
+
+let solcjs = require('./solc');
+const solcVersion = require('solc-version');
+
+module.exports = solcjs;
+
+solcjs.versions = solcVersion.versions;
+solcjs.versionsSkipVersion5 = solcVersion.versionsSkipVersion5;
+solcjs.version2url = solcVersion.version2url;
+},{"./solc":90,"solc-version":95}],90:[function(require,module,exports){
+const solcVersion = require('solc-version');
+const getCompile = require('./getCompile');
+const solcjsCore = require('solcjs-core');
+const solcWrapper = solcjsCore.solcWrapper.wrapper;
+
+function solcjs(_version) {
+  return new Promise(async (resolve, reject) => {
+    let newCompile;
+    let version;
+
+    try {
+      version = await solcjsCore.getVersion(_version);
+      
+      console.time('[fetch compiler]');
+      let url = await solcVersion.version2url(version);
+      let compilersource = await solcjsCore.getCompilersource(url);
+      console.timeEnd('[fetch compiler]');
+
+      console.time('[load compiler]');
+      const solc = solcjsCore.loadModule(compilersource);
+      console.timeEnd('[load compiler]');
+
+      console.time('[wrap compiler]');
+      let _compiler = solcWrapper(solc);
+      _compiler.opts = { version, url };
+
+      newCompile = getCompile(_compiler);
+      newCompile.version = { name: version, url };
+      console.timeEnd('[wrap compiler]');
+
+      try {
+        await solcjsCore.pretest(newCompile, version);
+        resolve(newCompile);
+      } catch (err) { throw new Error('pretest failed'); }
+    } catch (error) {
+      console.error(error);
+      reject(error);
+    }
+  });
+}
+
+module.exports = solcjs;
+},{"./getCompile":88,"solc-version":95,"solcjs-core":111}],91:[function(require,module,exports){
+module.exports = {
+  resolverEngine: require('./resolverEngine')
+};
+},{"./resolverEngine":92}],92:[function(require,module,exports){
+module.exports = class ResolverEngine {
+  constructor() {
+    this.resolvers = [];
+    this.previouslyHandled = {};
+  }
+
+  async getContent(url) {
+    for (let resolve of this.resolvers) {
+      if (this.getResolverType(url) == resolve.type) {
+        const result = await resolve.parser(url);
+        if (result) return result;
+      }
+    }
+    return;
+  }
+
+  // get data
+  async require(importPath) {
+    const imported = this.previouslyHandled[importPath];
+    // get source from cache
+    if (imported) {
+      let result = this.getResultFromImported(imported, importPath);
+      return result.content;
+    }
+
+    const handlerType = this.getResolverType(importPath);
+    const content = await this.getContent(importPath);
+
+    this.previouslyHandled[importPath] = {
+      content: content,
+      type: handlerType,
+      importPath
+    };
+
+    return content;
+  }
+
+  // chain pattern
+  addResolver(resolver) {
+    this.resolvers.push(resolver);
+    return this;
+  }
+
+  getResultFromImported(imported, importPath) {
+    return {
+      content: imported.content,
+      type: imported.type,
+      importPath
+    };
+  }
+
+  getResolverType(url) {
+    for (let resolver of this.resolvers) {
+      let match = resolver.match.exec(url);
+      if (match) {
+        return resolver.type;
+      }
+    }
+    return;
+  }
+
+  isMatch(importPath) {
+    let found = false;
+    if (this.resolvers.length == 0) return false;
+    for (let resolver of this.resolvers) {
+      if (found) break;
+      const match = resolver.match.exec(importPath);
+      if (match) found = true;
+    }
+    return !found;
+  }
+};
+},{}],93:[function(require,module,exports){
+const baseURL = 'https://solc-bin.ethereum.org/bin';
+
+const ajaxCaching = require('ajax-caching');
+const promiseAjax = ajaxCaching.promiseAjax;
+
+module.exports = getlist;
+
+async function getlist() {
+  try {
+    const opts = {
+      url: `${baseURL}/list.json`,
+      caching: true,
+      transform: function (data) {
+        if (data.releases) throw Error('get list fail');
+        return data;
+      }
+    };
+    return await promiseAjax(opts);
+  } catch (error) {
+    throw error;
+  }
+}
+},{"ajax-caching":21}],94:[function(require,module,exports){
+module.exports = groupByVersion;
+
+function removeAllZeroPointFiveVersion(select) {
+  select.nightly = select.nightly.filter(x => !~x.indexOf('v0.5.'));
+  select.all = select.all.filter(x => !~x.indexOf('v0.5.'));
+  select.releases = select.releases.filter(x => !~x.indexOf('v0.5.'));
+}
+
+function groupByVersion(data, skip5 = true) {
+  const { releases, nightly, all } = data;
+  let select = {};
+  select.nightly = Object.keys(nightly).reverse();
+  select.all = Object.keys(all).reverse();
+  select.releases = Object.keys(releases).reverse();
+  if (skip5) removeAllZeroPointFiveVersion(select);
+  return select;
+}
+},{}],95:[function(require,module,exports){
+module.exports = {
+  version2url: require('./version2url'),
+  versions: require('./versions'),
+  versionsSkipVersion5: require('./versionsSkipVersion5')
+};
+},{"./version2url":97,"./versions":98,"./versionsSkipVersion5":99}],96:[function(require,module,exports){
+module.exports = processList;
+
+function processList(json) {
+  const data = JSON.parse(json);
+  const lists = Object.values(data.builds).reduce(({ agg, d }, x, i, arr) => {
+    const { path, prerelease, version } = x;
+    if (prerelease) {
+      d = prerelease.split('nightly.')[1];
+      var [year0, month0, day0] = d.split('.').map(Number);
+      if ((month0 + '').length < 2) month0 = '0' + month0;
+      if ((day0 + '').length < 2) day0 = '0' + day0;
+      d = [year0, month0, day0].join('.');
+      const entry = [`v${version}-nightly-${d}`, path];
+      agg.nightly.push(entry);
+      agg.all.push(entry);
+    } else {
+      for (var j = i + 1, ahead; j < arr.length && !(ahead = arr[j].prerelease); j++) { }
+      if (ahead) ahead = ahead.split('nightly.')[1];
+      else ahead = d;
+      if (!d) d = ahead;
+      if (ahead !== d) {
+        var [year1, month1, day1] = d.split('.').map(Number);
+        var [year2, month2, day2] = ahead.split('.').map(Number);
+        var d1 = new Date(year1, month1 - 1, day1);
+        var d2 = new Date(year2, month2 - 1, day2);
+        var diffDays = parseInt((d2 - d1) / (1000 * 60 * 60 * 24));
+        var d3 = new Date(d1);
+        d3.setDate(d3.getDate() + diffDays / 2);
+        var month = d3.getUTCMonth() + 1;
+        var day = d3.getDate();
+        var year = d3.getUTCFullYear();
+        var current = [year, month, day].join('.');
+      } else {
+        var current = ahead;
+      }
+      var [year0, month0, day0] = current.split('.').map(Number);
+      if ((month0 + '').length < 2) month0 = '0' + month0;
+      if ((day0 + '').length < 2) day0 = '0' + day0;
+      current = [year0, month0, day0].join('.');
+      const entry = [`v${version}-stable-${current}`, path];
+      agg.releases.push(entry);
+      agg.all.push(entry);
+    }
+    return { agg, d };
+  }, { agg: { releases: [], nightly: [], all: [] }, d: null }).agg;
+  const { releases, nightly, all } = lists;
+  lists.releases = releases.reduce((o, x) => ((o[x[0]] = x[1]), o), {});
+  lists.nightly = nightly.reduce((o, x) => ((o[x[0]] = x[1]), o), {});
+  lists.all = all.reduce((o, x) => ((o[x[0]] = x[1]), o), {});
+  return lists;
+}
+},{}],97:[function(require,module,exports){
+const baseURL = 'https://solc-bin.ethereum.org/bin';
+
+const processList = require('./processList');
+const getlist = require('./getlist');
+
+module.exports = version2url;
+
+function version2url(version, list) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let data = list ? list : await getlist();
+      let select = processList(data);
+      const { all, releases } = select;
+      if (version === 'latest') version = Object.keys(releases)[0];
+      if (version === 'nightly') version = Object.keys(all)[0];
+      var path = all[version];
+      if (!path) return reject(new Error(`unknown version: ${version}`));
+      resolve(`${baseURL}/${path}`);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+},{"./getlist":93,"./processList":96}],98:[function(require,module,exports){
+const processList = require('./processList');
+const getlist = require('./getlist');
+const groupByVersion = require('./groupByVersion');
+
+module.exports = versions;
+
+function versions(list) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let data = list ? list : await getlist();
+      let select = groupByVersion(processList(data), false);
+      resolve(select);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+},{"./getlist":93,"./groupByVersion":94,"./processList":96}],99:[function(require,module,exports){
+const processList = require('./processList');
+const getlist = require('./getlist');
+const groupByVersion = require('./groupByVersion');
+
+module.exports = versionsSkipVersion5;
+
+function versionsSkipVersion5() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let data = await getlist();
+      let select = groupByVersion(processList(data), true);
+      resolve(select);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+},{"./getlist":93,"./groupByVersion":94,"./processList":96}],100:[function(require,module,exports){
+arguments[4][82][0].apply(exports,arguments)
+},{"./getImports":101,"./isExistImport":104,"dup":82}],101:[function(require,module,exports){
+arguments[4][83][0].apply(exports,arguments)
+},{"dup":83}],102:[function(require,module,exports){
+arguments[4][84][0].apply(exports,arguments)
+},{"./combineSource":100,"dup":84}],103:[function(require,module,exports){
+module.exports = {
+  combineSource: require('./combineSource'),
+  getImports: require('./getImports'),
+  getReadCallback: require('./getReadCallback'),
+  isExistImport: require('./isExistImport')
+};
+},{"./combineSource":100,"./getImports":101,"./getReadCallback":102,"./isExistImport":104}],104:[function(require,module,exports){
+arguments[4][86][0].apply(exports,arguments)
+},{"./getImports":101,"dup":86}],105:[function(require,module,exports){
+const solcImport = require('solc-import');
+const getReadCallback = require('./getReadCallback');
+const wrapperCompile = require('./wrapperCompile');
+
+module.exports = getCompile;
+
+function getCompile(oldSolc) {
+  let compile;
+  Object.keys(oldSolc).forEach(key => {
+    if (key != 'compile') return;
+
+    compile = async function (sourcecode = '', getImportContent) {
+      if (solcImport.isExistImport(sourcecode)) {
+        if (getImportContent == undefined) throw Error('you should pass getImportContent function in the second pararmeter.');
+      }
+
+      let readCallback = await getReadCallback(
+        sourcecode,
+        getImportContent
+      );
+      return wrapperCompile(oldSolc, sourcecode, readCallback);
+    };
+  });
+  return compile;
+}
+
+},{"./getReadCallback":108,"./wrapperCompile":123,"solc-import":103}],106:[function(require,module,exports){
+const solcImport = require('solc-import');
+
+module.exports = getCompileOutput;
+
+function getCompileOutput(oldSolc, sourcecode, readCallback) {
+  let output;
+  if (solcImport.isExistImport(sourcecode)) {
+    // this is wrapper.compile
+    output = oldSolc.compile(sourcecode, 1, readCallback);
+  } else {
+    output = oldSolc.compile(sourcecode, 1);
+  }
+  return output;
+}
+},{"solc-import":103}],107:[function(require,module,exports){
+const ajaxCaching = require('ajax-caching');
+const promiseAjax = ajaxCaching.promiseAjax;
+
+module.exports = getCompilersource;
+
+async function getCompilersource(compilerURL) {
+  try {
+    const opts = {
+      url: compilerURL,
+      caching: true,
+      transform: function (data) {
+        if (data.substring(0, 10) != 'var Module') {
+          throw Error('get compiler source fail');
+        }
+        return data;
+      }
+    };
+    return await promiseAjax(opts);
+  } catch (error) {
+    throw error;
+  }
+}
+},{"ajax-caching":21}],108:[function(require,module,exports){
+const solcImport = require('solc-import');
+
+module.exports = getReadCallback;
+
+async function getReadCallback(sourcecode, getImportContent) {
+  if (!solcImport.isExistImport(sourcecode)) return;
+  return await solcImport.getReadCallback(sourcecode, getImportContent);
+}
+},{"solc-import":103}],109:[function(require,module,exports){
+module.exports = getStandardError;
+
+function getStandardError(errors) {
+  let result = [];
+  for (let error of errors) {
+    result.push({
+      component: error.component,
+      formattedMessage: error.formattedMessage,
+      message: error.message,
+      type: error.type
+    });
+  }
+  return result;
+}
+},{}],110:[function(require,module,exports){
+const solcVersion = require('solc-version');
+
+module.exports = getVersion;
+
+async function getVersion(_version) {
+  if (typeof _version == 'string' && _version.length < 30) return _version;
+  let select;
+  if (_version == undefined) {
+    select = await solcVersion.versions();
+  } else if (typeof _version == 'string') {
+    select = await solcVersion.versions(_version);
+  } else {
+    throw Error('unknow getVersion error');
+  }
+  return select.releases[0];
+}
+},{"solc-version":95}],111:[function(require,module,exports){
+module.exports = {
+  getCompilersource: require('./getCompilersource'),
+  getReadCallback: require('./getReadCallback'),
+  getVersion: require('./getVersion'),
+  loadModule: require('./loadModule'),
+  pretest: require('./pretest'),
+  wrapperCompile: require('./wrapperCompile'),
+  getCompile: require('./getCompile'),
+  solc: require('./solc'),
+  solcWrapper: require('./solc-wrapper')
+};
+},{"./getCompile":105,"./getCompilersource":107,"./getReadCallback":108,"./getVersion":110,"./loadModule":112,"./pretest":113,"./solc":122,"./solc-wrapper":115,"./wrapperCompile":123}],112:[function(require,module,exports){
+module.exports = loadModule;
+
+// HELPER
+function loadModule(sourcecode) {
+  let script = window.document.createElement('script');
+  let exists = true;
+  if (!('Module' in window)) {
+    exists = false;
+    window.Module = {};
+  }
+  script.text = `window.Module=((Module)=>{${sourcecode};return Module})()`;
+  window.document.head.appendChild(script);
+  window.document.head.removeChild(script);
+  const compiler = window.Module;
+  if (!exists) delete window.Module;
+  return compiler;
+}
+
+// function loadModule(sourcecode) {
+//   let script = window.document.createElement('script');
+//   let oldModule, exists;
+//   if ('Module' in window) {
+//     oldModule = window.Module;
+//     exists = true;
+//   } else {
+//     window.Module = {};
+//   }
+//   script.text = `window.Module=((Module)=>{${sourcecode};return Module})()`;
+//   window.document.head.appendChild(script);
+//   window.document.head.removeChild(script);
+//   const compiler = window.Module;
+//   if (exists) {
+//     window.Module = oldModule;
+//   } else {
+//     delete window.Module;
+//   }
+//   return compiler;
+// }
+},{}],113:[function(require,module,exports){
+module.exports = pretest;
+
+async function pretest(compile) {
+  try {
+    let content = `
+    contract NewContract {
+      function f() public {}
+    }`;
+    await compile(content);
+  } catch (error) {
+    console.error('pretest failed');
+    throw error;
+  }
+}
+},{}],114:[function(require,module,exports){
+// from: sindresorhus/semver-regex
+var semverRegex = /\bv?(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[\da-z-]+(?:\.[\da-z-]+)*)?(?:\+[\da-z-]+(?:\.[\da-z-]+)*)?\b/ig;
+
+// from: substack/semver-compare
+function cmp (a, b) {
+  var pa = a.split('.'), pb = b.split('.');
+  for (var i = 0; i < 3; i++) {
+    var na = Number(pa[i]), nb = Number(pb[i]);
+    if (na > nb) return 1;
+    if (nb > na) return -1;
+    if (!isNaN(na) && isNaN(nb)) return 1;
+    if (isNaN(na) && !isNaN(nb)) return -1;
+  }
+  return 0;
+}
+
+// semver.lt('1.2.3', '9.8.7') // true
+var semver = {
+  lt(a, b) { 
+    var A = a.match(semverRegex), B = b.match(semverRegex);
+    if (A && A.length === 1 && B && B.length === 1) {
+      return cmp(A[0], B[0]) === -1;
+    }
+  }
+};
+
+function update (compilerVersion, abi) {
+  var hasConstructor = false;
+  var hasFallback = false;
+
+  for (var i = 0; i < abi.length; i++) {
+    var item = abi[i];
+
+    if (item.type === 'constructor') {
+      hasConstructor = true;
+
+      // <0.4.5 assumed every constructor to be payable
+      if (semver.lt(compilerVersion, '0.4.5')) {
+        item.payable = true;
+      }
+    } else if (item.type === 'fallback') {
+      hasFallback = true;
+    }
+
+    if (item.type !== 'event') {
+      // add 'payable' to everything
+      if (semver.lt(compilerVersion, '0.4.0')) {
+        item.payable = true;
+      }
+
+      // add stateMutability field
+      if (semver.lt(compilerVersion, '0.4.16')) {
+        if (item.payable) {
+          item.stateMutability = 'payable';
+        } else if (item.constant) {
+          item.stateMutability = 'view';
+        } else {
+          item.stateMutability = 'nonpayable';
+        }
+      }
+    }
+  }
+
+  // 0.1.2 from Aug 2015 had it. The code has it since May 2015 (e7931ade)
+  if (!hasConstructor && semver.lt(compilerVersion, '0.1.2')) {
+    abi.push({
+      type: 'constructor',
+      payable: true,
+      stateMutability: 'payable',
+      inputs: []
+    });
+  }
+
+  if (!hasFallback && semver.lt(compilerVersion, '0.4.0')) {
+    abi.push({
+      type: 'fallback',
+      payable: true,
+      stateMutability: 'payable'
+    });
+  }
+
+  return abi;
+}
+
+module.exports = {
+  update: update
+};
+
+},{}],115:[function(require,module,exports){
+module.exports = {
+  linker: require('./linker'),
+  wrapper: require('./wrapper'),
+  abi: require('./abi'),
+  translate: require('./translate')
+};
+},{"./abi":114,"./linker":116,"./translate":117,"./wrapper":121}],116:[function(require,module,exports){
+module.exports = { linkBytecode, findLinkReferences };
+
+function linkBytecode (bytecode, libraries) {
+  // NOTE: for backwards compatibility support old compiler which didn't use file names
+  var librariesComplete = {};
+  for (var libraryName in libraries) {
+    if (typeof libraries[libraryName] === 'object') {
+      for (var lib in libraries[libraryName]) { // API compatible with the standard JSON i/o
+        librariesComplete[lib] = libraries[libraryName][lib];
+        librariesComplete[libraryName + ':' + lib] = libraries[libraryName][lib];
+      }
+    } else {
+      // backwards compatible API for early solc-js verisons
+      var parsed = libraryName.match(/^([^:]*):?(.*)$/);
+      if (parsed) librariesComplete[parsed[2]] = libraries[libraryName];
+      librariesComplete[libraryName] = libraries[libraryName];
+    }
+  }
+  for (libraryName in librariesComplete) {
+    var internalName = libraryName.slice(0, 36);
+    // truncate to 37 characters
+    // prefix and suffix with __
+    var libLabel = '__' + internalName + Array(37 - internalName.length).join('_') + '__';
+    var hexAddress = librariesComplete[libraryName];
+    if (hexAddress.slice(0, 2) !== '0x' || hexAddress.length > 42) {
+      throw new Error('Invalid address specified for ' + libraryName);
+    }
+    hexAddress = hexAddress.slice(2);
+    // remove 0x prefix
+    hexAddress = Array(40 - hexAddress.length + 1).join('0') + hexAddress;
+    while (bytecode.indexOf(libLabel) >= 0) {
+      bytecode = bytecode.replace(libLabel, hexAddress);
+    }
+  }
+  return bytecode;
+}
+
+function findLinkReferences (bytecode) {
+  // find 40 bytes in the pattern of __...<36 digits>...__
+  // e.g. __Lib.sol:L_____________________________
+  var linkReferences = {};
+  var offset = 0;
+  while (true) {
+    var found = bytecode.match(/__(.{36})__/);
+    if (!found) {
+      break;
+    }
+
+    var start = found.index;
+    // trim trailing underscores
+    // NOTE: this has no way of knowing if the trailing underscore was part of the name
+    var libraryName = found[1].replace(/_+$/gm, '');
+    if (!linkReferences[libraryName]) linkReferences[libraryName] = [];
+
+    linkReferences[libraryName].push({
+      // offsets are in bytes in binary representation (and not hex)
+      start: (offset + start) / 2,
+      length: 20
+    });
+
+    offset += start + 20;
+    bytecode = bytecode.slice(start + 20);
+  }
+  return linkReferences;
+}
+
+},{}],117:[function(require,module,exports){
+module.exports = {
+  standardTranslateJsonCompilerOutput: require('./standardTranslateJsonCompilerOutput'),
+  prettyPrintLegacyAssemblyJSON: require('./prettyPrintLegacyAssemblyJSON'),
+  versionToSemver: require('./versionToSemver')
+};
+},{"./prettyPrintLegacyAssemblyJSON":118,"./standardTranslateJsonCompilerOutput":119,"./versionToSemver":120}],118:[function(require,module,exports){
+module.exports = prettyPrintLegacyAssemblyJSON;
+
+function prettyPrintLegacyAssemblyJSON(assembly, source) {
+  return formatAssemblyText(assembly, '', source);
+}
+
+function formatAssemblyText(asm, prefix, source) {
+  if (typeof asm === typeof '' || asm === null || asm === undefined) {
+    return prefix + (asm || '') + '\n';
+  }
+  var text = prefix + '.code\n';
+  asm['.code'].forEach(function (item, i) {
+    var v = item.value === undefined ? '' : item.value;
+    var src = '';
+    if (source !== undefined && item.begin !== undefined && item.end !== undefined) {
+      src = escapeString(source.slice(item.begin, item.end));
+    }
+    if (src.length > 30) {
+      src = src.slice(0, 30) + '...';
+    }
+    if (item.name !== 'tag') {
+      text += '  ';
+    }
+    text += prefix + item.name + ' ' + v + '\t\t\t' + src + '\n';
+  });
+  text += prefix + '.data\n';
+  var asmData = asm['.data'] || [];
+  for (var i in asmData) {
+    var item = asmData[i];
+    text += '  ' + prefix + '' + i + ':\n';
+    text += formatAssemblyText(item, prefix + '    ', source);
+  }
+  return text;
+}
+
+function escapeString(text) {
+  return text
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+}
+},{}],119:[function(require,module,exports){
+// https://solidity.readthedocs.io/en/v0.5.1/using-the-compiler.html?highlight=legacyAST#output-description
+
+module.exports = standardTranslateJsonCompilerOutput;
+
+// function writeOutput(data, version) {
+//   const fileName = version.split('-')[0];
+//   const jsonfile = require('jsonfile');
+//   jsonfile.writeFile(`./test/wrapper/translate/output/${fileName}.json`, data, function (err) {
+//     if (err) console.error(err);
+//   });
+// }
+
+function standardTranslateJsonCompilerOutput({ version, url }, data) {
+  if (isMatchVersion(version, '0.1')) throw Error('don\'t support v0.1.x version.');
+
+  try {
+    // writeOutput(data, version);
+    let output = Object.keys(data.contracts).map(name => {
+      let contract = data.contracts[name];
+      var {
+        functionHashes,
+      } = contract;
+
+      const metadata = getMetadata(contract, name, version);
+
+      var compilation = {
+        name: getName(contract, name, version),
+        abi: getABI(contract, name, version),
+        sources: getSource(data, metadata, version, name),
+        compiler: getCompile(metadata, version, url, name),
+        assembly: {
+          assembly: getAssembly(contract, name, version),
+          opcodes: getOpcodes(contract)
+        },
+        binary: {
+          bytecodes: {
+            bytecode: getBytecode(contract, name, version),
+            runtimeBytecode: getRuntimeBytecode(contract, name, version)
+          },
+          sourcemap: {
+            srcmap: getSrcmap(contract, version),
+            srcmapRuntime: getSrcmapRuntime(contract, version)
+          },
+        },
+        metadata: {
+          ast: getAST(name, data, version),
+          devdoc: getDevDoc(contract, metadata, version),
+          userdoc: getUserDoc(contract, metadata, version),
+          functionHashes,
+          gasEstimates: getGasEstimates(contract, name, version),
+          analysis: (() => {
+            return getAnalysis(data.errors);
+          })()
+        }
+      };
+      // console.log('=== stardard output ====');
+      // console.log(compilation);
+      return compilation;
+    });
+    return output;
+  } catch (error) {
+    console.error(error);
+    console.error('[ERROR] parse standard output error');
+    throw error;
+  }
+}
+
+function isNewVersion(version) {
+  return isMatchVersion(version, '0.5', '0.4');
+}
+
+function getName(contract, name, version) {
+  return isNewVersion(version) ? Object.keys(contract)[0] : name;
+}
+
+function getAnalysis(errors) {
+  let result = { warnings: [], others: [] };
+  for (let error in errors) {
+    let errItem = errors[error];
+    let type;
+    if (errItem.type) {
+      type = errItem.type.trim().toLowerCase();
+    } else {
+      type = errItem.split(':')[3];
+    }
+    if (type == 'warning') type = 'warnings';
+    (result[type] || (result[type] = [])).push(errItem);
+  }
+  return result;
+}
+
+function getSrcmap(contract, version) {
+  try {
+    if (isMatchVersion(version, '0.5')) {
+      let name = Object.keys(contract)[0];
+      return contract[name].evm.bytecode.sourceMap;
+    } else if (isMatchVersion(version, '0.4', '0.3')) {
+      return contract.srcmap;
+    } else {
+      return;
+    }
+  } catch (error) {
+    console.error('[ERROR] parse srcmap fail');
+    throw error;
+  }
+}
+
+function getBytecode(contract, name, version) {
+  if (isNewVersion(version)) {
+    let name2 = Object.keys(contract)[0];
+    return contract[name2].evm.bytecode.object;
+  } else {
+    return contract.bytecode;
+  }
+}
+
+function getRuntimeBytecode(contract, name, version) {
+  if (isNewVersion(version)) {
+    let name2 = Object.keys(contract)[0];
+    return contract[name2].evm.deployedBytecode.object;
+  } else {
+    return contract.runtimeBytecode;
+  }
+}
+
+function getSrcmapRuntime(contract, version) {
+  try {
+    if (isMatchVersion(version, '0.5')) {
+      let name = Object.keys(contract)[0];
+      return contract[name].evm.bytecode.sourceMap;
+    } else if (isMatchVersion(version, '0.4')) {
+      return contract.srcmapRuntime;
+    } else if (isMatchVersion(version, '0.3')) {
+      return contract['srcmap-runtime'];
+    } else {
+      return;
+    }
+  } catch (error) {
+    console.error('[ERROR] parse bytecode fail');
+    throw error;
+  }
+}
+
+function getOpcodes(contract) {
+  if (contract.opcodes) {
+    return contract.opcodes;
+  } else {
+    let name = Object.keys(contract)[0];
+    return contract[name].evm.bytecode.opcodes;
+  }
+}
+
+function getAssembly(contract, name, version) {
+  if (isNewVersion(version)) {
+    let name = Object.keys(contract)[0];
+    return contract[name].evm.legacyAssembly;
+  } else {
+    return contract.assembly;
+  }
+}
+
+function getGasEstimates(contract, name, version) {
+  if (isNewVersion(version)) {
+    let name = Object.keys(contract)[0];
+    return contract[name].evm.gasEstimates;
+  } else {
+    return contract.gasEstimates;
+  }
+}
+
+function getAST(name, data, version) {
+  return isNewVersion(version) ? data.sources[name].ast : data.sources[''].AST;
+}
+
+function getUserDoc(contract, metadata, version) {
+  try {
+    if (isMatchVersion(version, '0.5')) {
+      let name = Object.keys(contract)[0];
+      return contract[name].userdoc;
+    } else if (isMatchVersion(version, '0.4')) {
+      return metadata.output.userdoc;
+    } else {
+      return;
+    }
+  } catch (error) {
+    console.error('[ERROR] parse userdoc fail');
+    throw error;
+  }
+}
+
+function getDevDoc(contract, metadata, version) {
+  if (isMatchVersion(version, '0.5')) {
+    let name = Object.keys(contract)[0];
+    return contract[name].devdoc;
+  } else if (isMatchVersion(version, '0.4')) {
+    return metadata.output.devdoc;
+  } else {
+    return;
+  }
+}
+
+function getABI(contract, name, version) {
+  if (isNewVersion(version)) {
+    let name2 = Object.keys(contract)[0];
+    return contract[name2].abi;
+  } else {
+    return JSON.parse(contract.interface);
+  }
+}
+
+function getMetadata(contract, name, version) {
+  if (isNewVersion(version)) {
+    let name2 = Object.keys(contract)[0];
+    // let { metadata, abi, evm } 
+    let { metadata } = contract[name2];
+    // console.log('=== metadata ====');
+    // console.log(metadata);
+    if (metadata) metadata = JSON.parse(metadata);
+    return metadata;
+  } else {
+    return;
+  }
+}
+
+function getCompile(metadata, version, url, name) {
+  let language, evmVersion, optimizer, runs;
+  if (isNewVersion(version)) {
+    if (metadata) {
+      language = metadata.language.toLowerCase();
+      evmVersion = metadata.settings.evmVersion;
+      optimizer = metadata.settings.optimizer.enabled;
+      runs = metadata.settings.optimizer.runs;
+    }
+  } else {
+    language = 'solidity';
+    // evmVersion = metadata.settings.evmVersion;
+    optimizer = true;
+    runs = 200;
+  }
+
+  return {
+    language,
+    version: version,
+    url,
+    evmVersion,
+    optimizer,
+    runs,
+  };
+}
+
+function getSource(data, metadata, version, name) {
+  let sources = {};
+
+  if (isMatchVersion(version, '0.5', '0.4')) {
+    if (!metadata) return sources;
+    sources = {
+      sourcecode: {
+        keccak256: getKeccak256(metadata, version, name),
+        urls: [] // DONT HAVE
+      },
+      compilationTarget: (metadata.settings.compilationTarget)[name],
+      remappings: metadata.settings.remappings,
+      libraries: metadata.settings.libraries,
+      sourcelist: undefined
+    };
+    // } else if (isMatchVersion(version, '0.4')) {
+    //   sources = {
+    //     sourcecode: metadata.sources[''],
+    //     compilationTarget: metadata.settings.compilationTarget[''],
+    //     remappings: metadata.settings.remappings,
+    //     libraries: metadata.settings.libraries,
+    //     sourcelist: data.sourceList
+    // };
+  } else if (isMatchVersion(version, '0.3')) {
+    sources = {
+      sourcecode: '',
+      compilationTarget: '',
+      remappings: '',
+      libraries: '',
+      sourcelist: data.sourceList
+    };
+  } else {
+    return;
+  }
+  return sources;
+}
+
+function getKeccak256(metadata, version, name) {
+  if (isMatchVersion(version, '0.5')) {
+    return metadata.sources[name].keccak256;
+  } else {
+    return metadata.sources[''];
+  }
+}
+
+function isMatchVersion(version, ...match) {
+  for (let m of match) {
+    if (version.indexOf(`v${m}.`) != -1) return true;
+  }
+  return false;
+}
+},{}],120:[function(require,module,exports){
+module.exports = versionToSemver;
+
+/// Translate old style version numbers to semver.
+/// Old style: 0.3.6-3fc68da5/Release-Emscripten/clang
+///            0.3.5-371690f0/Release-Emscripten/clang/Interpreter
+///            0.2.0-e7098958/.-Emscripten/clang/int linked to libethereum-1.1.1-bbb80ab0/.-Emscripten/clang/int
+///            0.1.3-0/.-/clang/int linked to libethereum-0.9.92-0/.-/clang/int
+///            0.1.2-5c3bfd4b*/.-/clang/int
+///            0.1.1-6ff4cd6b/RelWithDebInfo-Emscripten/clang/int
+/// New style: 0.4.5+commit.b318366e.Emscripten.clang
+function versionToSemver(version) {
+  // FIXME: parse more detail, but this is a good start
+  var parsed = version.match(/^([0-9]+\.[0-9]+\.[0-9]+)-([0-9a-f]{8})[/*].*$/);
+  if (parsed) {
+    return parsed[1] + '+commit.' + parsed[2];
+  }
+  if (version.indexOf('0.1.3-0') !== -1) {
+    return '0.1.3';
+  }
+  // assume it is already semver compatible
+  return version;
+}
+},{}],121:[function(require,module,exports){
+const linker = require('./linker.js');
+const translate = require('./translate');
+let soljson;
+const assert = (bool, msg) => { if (!bool) throw new Error(msg); };
+
+module.exports = wrapper;
+
+function wrapCallback(callback) {
+  assert(typeof callback === 'function', 'Invalid callback specified.');
+  return function (path, contents, error) {
+    var result = callback(soljson.Pointer_stringify(path));
+    if (typeof result.contents === 'string') copyString(result.contents, contents);
+    if (typeof result.error === 'string') copyString(result.error, error);
+  };
+}
+
+function copyString(str, ptr) {
+  var length = soljson.lengthBytesUTF8(str);
+  var buffer = soljson._malloc(length + 1);
+  soljson.stringToUTF8(str, buffer, length + 1);
+  soljson.setValue(ptr, buffer, '*');
+}
+
+function runWithReadCallback(readCallback, compile, args) {
+  if (readCallback === undefined) {
+    readCallback = function (path) {
+      return {
+        error: 'File import callback not supported'
+      };
+    };
+  }
+
+  // This is to support multiple versions of Emscripten.
+  var addFunction = soljson.addFunction || soljson.Runtime.addFunction;
+  var removeFunction = soljson.removeFunction || soljson.Runtime.removeFunction;
+
+  var cb = addFunction(wrapCallback(readCallback));
+  var output;
+  try {
+    args.push(cb);
+    // console.log('=== cb ====');
+    // console.log(cb);
+    output = compile.apply(undefined, args);
+  } catch (e) {
+    removeFunction(cb);
+    throw e;
+  }
+  removeFunction(cb);
+  return output;
+}
+
+function getCompileJSON() {
+  if ('_compileJSON' in soljson) {
+    return soljson.cwrap('compileJSON', 'string', ['string', 'number']);
+  }
+}
+
+// function getCompileJSONMulti() {
+//   if ('_compileJSONMulti' in soljson) {
+//     return soljson.cwrap('compileJSONMulti', 'string', ['string', 'number']);
+//   }
+// }
+
+// function getCompileJSONCallback() {
+//   if ('_compileJSONCallback' in soljson) {
+//     var compileInternal = soljson.cwrap('compileJSONCallback', 'string', ['string', 'number', 'number']);
+//     var compileJSONCallback = function (input, optimize, readCallback) {
+//       return runWithReadCallback(readCallback, compileInternal, [input, optimize]);
+//     };
+//     return compileJSONCallback;
+//   }
+// }
+
+function getCompileStandard() {
+  var compileStandard;
+  if ('_compileStandard' in soljson) {
+    var compileStandardInternal = soljson.cwrap('compileStandard', 'string', ['string', 'number']);
+    compileStandard = function (input, readCallback) {
+      return runWithReadCallback(readCallback, compileStandardInternal, [input]);
+    };
+  }
+  if ('_solidity_compile' in soljson) {
+    var solidityCompile = soljson.cwrap('solidity_compile', 'string', ['string', 'number']);
+    compileStandard = function (input, readCallback) {
+      return runWithReadCallback(readCallback, solidityCompile, [input]);
+    };
+  }
+  return compileStandard;
+}
+
+function getVersion() {
+  let version;
+  if ('_solidity_version' in soljson) {
+    version = soljson.cwrap('solidity_version', 'string', []);
+  } else {
+    version = soljson.cwrap('version', 'string', []);
+  }
+  return version;
+}
+
+function getLicense() {
+  let license;
+  if ('_solidity_license' in soljson) {
+    license = soljson.cwrap('solidity_license', 'string', []);
+  } else if ('_license' in soljson) {
+    license = soljson.cwrap('license', 'string', []);
+  } else {
+    // pre 0.4.14
+    license = function () {};
+  }
+  return license;
+}
+
+function getWrapperFormat(sourcecode) {
+  let input = {
+    language: 'Solidity',
+    settings: {
+      optimizer: {
+        enabled: true
+      },
+      metadata: {
+        useLiteralContent: true
+      },
+      outputSelection: { '*': { '*': ['*'], '': ['*'] } }
+    },
+    sources: {
+      'MyContract': {
+        content: sourcecode
+      }
+    }
+  };
+  return input;
+}
+
+function wrapper(_soljson) {
+  soljson = _soljson;
+  var compileJSON = getCompileJSON();
+  // var compileJSONMulti = getCompileJSONMulti();
+  // var compileJSONCallback = getCompileJSONCallback();
+  var compileStandard = getCompileStandard();
+  let version = getVersion();
+
+  function compile(input, optimise, readCallback) {
+    let result;
+    if (compileStandard) {
+      result = compileStandardWrapper(input, readCallback);
+    } else {
+      result = compileJSON(input, optimise);
+    }
+    return JSON.parse(result);
+  }
+
+  function compileStandardWrapper (input, readCallback) {
+    let newInput = JSON.stringify(getWrapperFormat(input));
+    return compileStandard(newInput, readCallback);
+  }
+
+  // function versionToSemver() { return translate.versionToSemver(version()); }
+  let license = getLicense();
+
+  return {
+    version: version,
+    // semver: versionToSemver,
+    license: license,
+    compile: compile,
+    linkBytecode: linker.linkBytecode
+  };
+}
+},{"./linker.js":116,"./translate":117}],122:[function(require,module,exports){
+const solcVersion = require('solc-version');
+const getCompile = require('./getCompile');
+const getVersion = require('./getVersion');
+const getCompilersource = require('./getCompilersource');
+const loadModule = require('./loadModule');
+const pretest = require('./pretest');
+const solcWrapper = require('./solc-wrapper/wrapper');
+
+function solcjs(_version) {
+  return new Promise(async (resolve, reject) => {
+    let newCompile;
+    let version;
+
+    try {
+      version = await getVersion(_version);
+      
+      console.time('[fetch compiler]');
+      let url = await solcVersion.version2url(version);
+      let compilersource = await getCompilersource(url);
+      console.timeEnd('[fetch compiler]');
+
+      console.time('[load compiler]');
+      const solc = loadModule(compilersource);
+      console.timeEnd('[load compiler]');
+
+      console.time('[wrap compiler]');
+      let _compiler = solcWrapper(solc);
+      _compiler.opts = { version, url };
+
+      newCompile = getCompile(_compiler);
+      newCompile.version = { name: version, url };
+      console.timeEnd('[wrap compiler]');
+
+      try {
+        await pretest(newCompile);
+        resolve(newCompile);
+      } catch (err) { throw new Error('pretest failed'); }
+    } catch (error) {
+      console.error(error);
+      reject(error);
+    }
+  });
+}
+
+module.exports = solcjs;
+},{"./getCompile":105,"./getCompilersource":107,"./getVersion":110,"./loadModule":112,"./pretest":113,"./solc-wrapper/wrapper":121,"solc-version":95}],123:[function(require,module,exports){
+const translateJsonCompilerOutput = require('./solc-wrapper/translate/standardTranslateJsonCompilerOutput');
+const getCompileOutput = require('./getCompileOutput');
+const getStandardError = require('./getStandardError');
+
+module.exports = wrapperCompile;
+
+function wrapperCompile(oldSolc, sourcecode, readCallback) {
+  return new Promise(function (resolve, reject) {
+    let output = getCompileOutput(oldSolc, sourcecode, readCallback);
+    if (isCompilerFail(output)) {
+      const standardError = getStandardError(output.errors);
+      return reject(standardError);
+    } else {
+      const translateOutput = translateJsonCompilerOutput(oldSolc.opts, output);
+      resolve(translateOutput);
+    }
+  });
+
+  function isCompilerFail(output) {
+    return !output.contracts || Object.keys(output.contracts).length == 0;
+  }
+}
+},{"./getCompileOutput":106,"./getStandardError":109,"./solc-wrapper/translate/standardTranslateJsonCompilerOutput":119}],124:[function(require,module,exports){
 ;(function (globalObject) {
   'use strict';
 
@@ -16886,325 +18966,7 @@ function selfClosing (tag) { return closeRE.test(tag) }
   }
 })(this);
 
-},{}],55:[function(require,module,exports){
-const getMessage = require('./lib/getMessage');
-const getRange = require('./lib/getRange');
-const isAddress = require('./lib/isAddress');
-const isBoolean = require('./lib/isBoolean');
-const isInt = require('./lib/isInt');
-const isUint = require('./lib/isUint');
-const isValid = require('./lib/isValid');
-
-const version = '0.1.1';
-const validator = {
-  version,
-  isAddress,
-  isBoolean,
-  isInt8: (str) => isInt(str, 8),
-  isUint8: (str) => isUint(str, 8),
-  isValid,
-  getRange,
-  getMessage
-};
-
-module.exports = validator;
-},{"./lib/getMessage":56,"./lib/getRange":57,"./lib/isAddress":58,"./lib/isBoolean":59,"./lib/isInt":60,"./lib/isUint":61,"./lib/isValid":62}],56:[function(require,module,exports){
-const assertString = require('./util/assertString');
-const isValid = require('./isValid');
-
-module.exports = getMessage;
-
-function getMessage(type, str) {
-  assertString(str);
-  if (isValid(type, str)) return '';
-  if (type.search(/\buint/) != -1) return 'The value is an illegal range.';
-  if (type.search(/\bint/) != -1) return 'The value is an illegal range.';
-  if (type.search(/\bbool/) != -1) return 'The value is not a boolean.';
-  if (type.search(/\baddress/) != -1) return 'The value is not a valid address.';
-}
-},{"./isValid":62,"./util/assertString":63}],57:[function(require,module,exports){
-const bigNumber = require('bignumber.js');
-const assertString = require('./util/assertString');
-
-module.exports = getRange;
-
-function getRange(type) {
-  assertString(type);
-  if (type.search(/\buint/) != -1) return getUintRange(type);
-  if (type.search(/\bint/) != -1) return getIntRange(type);
-  return;
-}
-
-function getUintRange(type) {
-  let exponent = type.replace('uint', '');
-  if (exponent == '') exponent = '256';
-  exponent = bigNumber(exponent);
-  if (exponent.isInteger()) {
-    let range = {
-      MIN: 0,
-      MAX: bigNumber(2).pow(exponent).minus(1).toFixed()
-    };
-    return range;
-  }
-}
-
-function getIntRange(type) {
-  let exponent = type.replace('int', '');
-  if (exponent == '') exponent = '256';
-  exponent = bigNumber(exponent);
-  if (exponent.isInteger()) {
-    let range = {
-      MIN: bigNumber(2).pow(exponent).div(2).times(-1).toFixed(),
-      MAX: bigNumber(2).pow(exponent).div(2).minus(1).toFixed()
-    };
-    return range;
-  }
-}
-},{"./util/assertString":63,"bignumber.js":54}],58:[function(require,module,exports){
-const assertString = require('./util/assertString');
-var Web3Utils = require('web3-utils');
-
-module.exports = isAddress;
-
-function isAddress(str) {
-  assertString(str);
-  return Web3Utils.isAddress(str);
-}
-},{"./util/assertString":63,"web3-utils":188}],59:[function(require,module,exports){
-const assertString = require('./util/assertString');
-
-module.exports = isBoolean;
-
-function isBoolean(str) {
-  assertString(str);
-  return (['true', 'false'].indexOf(str) >= 0);
-}
-},{"./util/assertString":63}],60:[function(require,module,exports){
-// 帶符號整型
-const BigNumber = require('bignumber.js');
-const assertString = require('./util/assertString');
-
-module.exports = isInt;
-
-function isInt(str, exponent) {
-  assertString(str);
-  let num = new BigNumber(str);
-  return num.isInteger() && num.gte(-(Math.pow(2, exponent) / 2)) && num.lte((Math.pow(2, exponent) / 2) - 1);
-}
-},{"./util/assertString":63,"bignumber.js":54}],61:[function(require,module,exports){
-// 不帶符號整型
-const bigNumber = require('bignumber.js');
-const assertString = require('./util/assertString');
-
-module.exports = isUint;
-
-function isUint(str, exponent) {
-  assertString(str);
-  let num = bigNumber(str);
-  return num.isInteger() && num.gte(0) && num.lte(Math.pow(2, exponent) - 1);
-}
-},{"./util/assertString":63,"bignumber.js":54}],62:[function(require,module,exports){
-const assertString = require('./util/assertString');
-const isAddress = require('./isAddress');
-const isBoolean = require('./isBoolean');
-const isInt = require('./isInt');
-const isUint = require('./isUint');
-
-module.exports = isValid;
-
-function isValid(type, value) {
-  assertString(type);
-  assertString(value);
-  if (type.search(/\buint/) != -1) return isUint(value, type.substring(4));
-  if (type.search(/\bint/) != -1) return isInt(value, type.substring(3));
-  if (type.search(/\bbool/) != -1) return isBoolean(value);
-  if (type.search(/\baddress/) != -1) return isAddress(value);
-  return true;
-}
-},{"./isAddress":58,"./isBoolean":59,"./isInt":60,"./isUint":61,"./util/assertString":63}],63:[function(require,module,exports){
-module.exports = assertString;
-
-function assertString(input) {
-  const isString = (typeof input === 'string' || input instanceof String);
-
-  if (!isString) {
-    let invalidType;
-    if (input === null) {
-      invalidType = 'null';
-    } else {
-      invalidType = typeof input;
-      if (invalidType === 'object' && input.constructor && input.constructor.hasOwnProperty('name')) {
-        invalidType = input.constructor.name;
-      } else {
-        invalidType = `a ${invalidType}`;
-      }
-    }
-    throw new TypeError(`Expected string but received ${invalidType}.`);
-  }
-}
-},{}],64:[function(require,module,exports){
-const bel = require('bel')
-const csjs = require('csjs-inject')
-const validator = require('solidity-validator')
-
-module.exports = displayAddressInput
-
-function displayAddressInput ({ theme: { classes: css }, cb, focus, blur }) {
-  const input = bel`<div class=${css.addressField}>
-    <input class=${css.inputField} data-type="address" onclick="${(e)=>e.target.select()}" onblur=${(e)=>blur(e)} onfocus=${(e)=>focus(e)} oninput=${validate} placeholder='0x633...'>
-  </div>`
-  return input
-  function validate (e) {
-    const value = e.target.value
-    cb(validator.getMessage('address', value), e.target, value)
-  }
-}
-
-},{"bel":24,"csjs-inject":31,"solidity-validator":55}],65:[function(require,module,exports){
-arguments[4][54][0].apply(exports,arguments)
-},{"dup":54}],66:[function(require,module,exports){
-arguments[4][55][0].apply(exports,arguments)
-},{"./lib/getMessage":67,"./lib/getRange":68,"./lib/isAddress":69,"./lib/isBoolean":70,"./lib/isInt":71,"./lib/isUint":72,"./lib/isValid":73,"dup":55}],67:[function(require,module,exports){
-arguments[4][56][0].apply(exports,arguments)
-},{"./isValid":73,"./util/assertString":74,"dup":56}],68:[function(require,module,exports){
-arguments[4][57][0].apply(exports,arguments)
-},{"./util/assertString":74,"bignumber.js":65,"dup":57}],69:[function(require,module,exports){
-arguments[4][58][0].apply(exports,arguments)
-},{"./util/assertString":74,"dup":58,"web3-utils":188}],70:[function(require,module,exports){
-arguments[4][59][0].apply(exports,arguments)
-},{"./util/assertString":74,"dup":59}],71:[function(require,module,exports){
-arguments[4][60][0].apply(exports,arguments)
-},{"./util/assertString":74,"bignumber.js":65,"dup":60}],72:[function(require,module,exports){
-arguments[4][61][0].apply(exports,arguments)
-},{"./util/assertString":74,"bignumber.js":65,"dup":61}],73:[function(require,module,exports){
-arguments[4][62][0].apply(exports,arguments)
-},{"./isAddress":69,"./isBoolean":70,"./isInt":71,"./isUint":72,"./util/assertString":74,"dup":62}],74:[function(require,module,exports){
-arguments[4][63][0].apply(exports,arguments)
-},{"dup":63}],75:[function(require,module,exports){
-const bel = require('bel')
-const csjs = require('csjs-inject')
-const inputAddress = require("input-address")
-const inputInteger = require("input-integer")
-const inputBoolean = require("input-boolean")
-const inputString = require("input-string")
-const inputByte = require("input-byte")
-const validator = require('solidity-validator')
-
-module.exports = displayArrayInput
-
-function displayArrayInput ({ theme: { classes: css, colors }, type, cb, focus, blur }) {
-  const container = bel`<div class=${css.arrayContainer}></div>`
-  const arr = getParsedArray(type) // uint8[2][3][] returns  ['', 3, 2]
-  next({ container, arr, cb })
-  console.log("@todo: need to refactor inputArray")
-  return container
-  function next ({ container, arr, cb }) {
-    var len = arr.shift()
-    if (len === '') {
-      len = 1
-      container.appendChild(plusMinus({ container, arr, cb }))
-    }
-    for (var i = 0; i < len; i++) append({ container, arr: [...arr], cb })
-  }
-  function append ({ container, arr, cb }) {
-    if (arr.length) { // recursive step
-      const innerContainer = bel`<div class="${css.arrayContainer}"></div>`
-      container.appendChild(innerContainer)
-      next({ container: innerContainer, arr, cb, blur })
-    } else { // final step (stop recursion)
-      container.appendChild(returnInputFields({ classes: css, colors }, type, cb, focus, blur ))
-    }
-  }
-  function plusMinus ({ container, arr, cb }) {
-    return bel`<div class=${css.arrayPlusMinus}>
-        <i class="${css.arrayMinus} fa fa-minus" onclick=${e=>removeLast(container)}></i>
-        <i class="${css.arrayPlus} fa fa-plus" onclick=${e=>append({ container, arr: [...arr], cb })}></i>
-      </div>`
-  }
-  function removeLast (node) {
-    if (node.children.length > 2) node.removeChild(node.lastChild)
-  }
-}
-function returnInputFields (theme, type, cb, focus, blur) {
-  if (type.includes("int")) return inputInteger({ theme, type, cb, focus, blur })
-  else if (type.includes("byte")) return inputByte({ theme, type, cb, focus, blur })
-  else if (type.includes("string")) return inputString({ theme, type, cb, focus, blur })
-  else if (type.includes("bool")) return inputBoolean({ theme, type, cb, focus, blur })
-  else if (type.includes("fixed")) return inputInteger({ theme, type, cb, focus, blur })
-  else if (type.includes("address")) return inputAddress({ theme, type, cb, focus, blur })
-}
-function getParsedArray (type) {
-  const arr = []
-  const i = type.search(/\[/) // find where array starts (bool[2][])
-  const basicType = type.split('[')[0] // split to get basic type (bool, uint8)
-  const suffix = type.slice(i) // slice to get the remaining part = suffix ([2][][][])
-  suffix.split('][').forEach((x, i)=>{
-    if (x.search(/\d/) != -1) { arr.push(x.charAt(x.search(/\d/))) }  // if digit is present, push the digit
-    else { arr.push('') } // if no, push empty string
-  })
-  return arr.reverse()
-}
-
-},{"bel":24,"csjs-inject":31,"input-address":64,"input-boolean":86,"input-byte":99,"input-integer":110,"input-string":122,"solidity-validator":66}],76:[function(require,module,exports){
-arguments[4][54][0].apply(exports,arguments)
-},{"dup":54}],77:[function(require,module,exports){
-arguments[4][55][0].apply(exports,arguments)
-},{"./lib/getMessage":78,"./lib/getRange":79,"./lib/isAddress":80,"./lib/isBoolean":81,"./lib/isInt":82,"./lib/isUint":83,"./lib/isValid":84,"dup":55}],78:[function(require,module,exports){
-arguments[4][56][0].apply(exports,arguments)
-},{"./isValid":84,"./util/assertString":85,"dup":56}],79:[function(require,module,exports){
-arguments[4][57][0].apply(exports,arguments)
-},{"./util/assertString":85,"bignumber.js":76,"dup":57}],80:[function(require,module,exports){
-arguments[4][58][0].apply(exports,arguments)
-},{"./util/assertString":85,"dup":58,"web3-utils":188}],81:[function(require,module,exports){
-arguments[4][59][0].apply(exports,arguments)
-},{"./util/assertString":85,"dup":59}],82:[function(require,module,exports){
-arguments[4][60][0].apply(exports,arguments)
-},{"./util/assertString":85,"bignumber.js":76,"dup":60}],83:[function(require,module,exports){
-arguments[4][61][0].apply(exports,arguments)
-},{"./util/assertString":85,"bignumber.js":76,"dup":61}],84:[function(require,module,exports){
-arguments[4][62][0].apply(exports,arguments)
-},{"./isAddress":80,"./isBoolean":81,"./isInt":82,"./isUint":83,"./util/assertString":85,"dup":62}],85:[function(require,module,exports){
-arguments[4][63][0].apply(exports,arguments)
-},{"dup":63}],86:[function(require,module,exports){
-const bel = require('bel')
-const csjs = require('csjs-inject')
-const validator = require('solidity-validator')
-
-module.exports = displayBooleanInput
-
-function displayBooleanInput ({ theme: { classes: css, colors }, type, cb, focus, blur }) {
-  const boolFalse = bel `<div class="${css.columns} ${css.false}" data-state="" data-type="boolean" value="false" onclick=${toggle}>false</div>`
-  const boolTrue = bel `<div class="${css.columns} ${css.true}" data-state="" data-type="boolean" value="true" onclick=${toggle}>true</div>`
-  const input = bel`<div class=${css.booleanField} onclick=${(e)=>focus(e)}>
-    ${boolFalse}
-    ${boolTrue}
-  </div>`
-  return input
-
-  function toggle (e) {
-    let value = e.target.innerHTML
-    cb(validator.getMessage('boolean', value), e.target, value)
-    if (value === 'true') {
-      boolFalse.style.color = colors.booleanFieldColor
-      boolFalse.style.backgroundColor = colors.booleanFieldBackgroundColor
-      boolFalse.dataset.state = ""
-      boolTrue.dataset.state = "active"
-      boolTrue.style.color = colors.booleanFieldActiveColor
-      boolTrue.style.backgroundColor = colors.booleanFieldTruedBackgroundColor
-    } else if (value === 'false') {
-      boolTrue.style.color = colors.booleanFieldColor
-      boolTrue.style.backgroundColor = colors.booleanFieldBackgroundColor
-      boolTrue.dataset.state = ""
-      boolFalse.dataset.state = "active"
-      boolFalse.style.color = colors.booleanFieldActiveColor
-      boolFalse.style.backgroundColor = colors.booleanFieldFalsedBackgroundColor
-    }
-  }
-}
-
-},{"bel":24,"csjs-inject":31,"solidity-validator":77}],87:[function(require,module,exports){
-arguments[4][54][0].apply(exports,arguments)
-},{"dup":54}],88:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 const getMessage = require('./lib/getMessage')
 const getRange = require('./lib/getRange')
 const isAddress = require('./lib/isAddress')
@@ -17235,7 +18997,7 @@ for (let i = 1; i <= 32; i++) {
 
 module.exports = validator
 
-},{"./lib/getMessage":89,"./lib/getRange":90,"./lib/isAddress":91,"./lib/isBoolean":92,"./lib/isByteArray":93,"./lib/isBytes":94,"./lib/isInt":95,"./lib/isUint":96,"./lib/isValid":97}],89:[function(require,module,exports){
+},{"./lib/getMessage":126,"./lib/getRange":127,"./lib/isAddress":128,"./lib/isBoolean":129,"./lib/isByteArray":130,"./lib/isBytes":131,"./lib/isInt":132,"./lib/isUint":133,"./lib/isValid":134}],126:[function(require,module,exports){
 const assertString = require('./util/assertString')
 const isValid = require('./isValid')
 
@@ -17252,7 +19014,7 @@ function getMessage(type, str) {
   if (type.search(/\bbyte/) != -1) return 'The value is not a valid bytes.'
 }
 
-},{"./isValid":97,"./util/assertString":98}],90:[function(require,module,exports){
+},{"./isValid":134,"./util/assertString":135}],127:[function(require,module,exports){
 const bigNumber = require('bignumber.js')
 const assertString = require('./util/assertString')
 
@@ -17302,7 +19064,7 @@ function getIntRange(type) {
   }
 }
 
-},{"./util/assertString":98,"bignumber.js":87}],91:[function(require,module,exports){
+},{"./util/assertString":135,"bignumber.js":124}],128:[function(require,module,exports){
 const assertString = require('./util/assertString')
 var Web3Utils = require('web3-utils')
 
@@ -17313,7 +19075,7 @@ function isAddress(str) {
   return Web3Utils.isAddress(str)
 }
 
-},{"./util/assertString":98,"web3-utils":188}],92:[function(require,module,exports){
+},{"./util/assertString":135,"web3-utils":139}],129:[function(require,module,exports){
 const assertString = require('./util/assertString')
 
 module.exports = isBoolean
@@ -17323,7 +19085,7 @@ function isBoolean(str) {
   return ['true', 'false'].indexOf(str) >= 0
 }
 
-},{"./util/assertString":98}],93:[function(require,module,exports){
+},{"./util/assertString":135}],130:[function(require,module,exports){
 const assertString = require('./util/assertString')
 
 module.exports = isByteArray
@@ -17335,7 +19097,7 @@ function isByteArray(str) {
   const byteSize = (str.length - 2) / 2
   return byteSize >= 1 && byteSize <= 32 && hexRegularPattern.test(str)
 }
-},{"./util/assertString":98}],94:[function(require,module,exports){
+},{"./util/assertString":135}],131:[function(require,module,exports){
 // byte is an alias for bytes1
 const assertString = require('./util/assertString')
 
@@ -17349,7 +19111,7 @@ function isBytes(str, exponent) {
   return byteSize <= exponent && hexRegularPattern.test(str)
 }
 
-},{"./util/assertString":98}],95:[function(require,module,exports){
+},{"./util/assertString":135}],132:[function(require,module,exports){
 // 帶符號整型
 const BigNumber = require('bignumber.js')
 const assertString = require('./util/assertString')
@@ -17366,7 +19128,7 @@ function isInt(str, exponent) {
   )
 }
 
-},{"./util/assertString":98,"bignumber.js":87}],96:[function(require,module,exports){
+},{"./util/assertString":135,"bignumber.js":124}],133:[function(require,module,exports){
 // 不帶符號整型
 const bigNumber = require('bignumber.js')
 const assertString = require('./util/assertString')
@@ -17379,7 +19141,7 @@ function isUint(str, exponent) {
   return num.isInteger() && num.gte(0) && num.lte(Math.pow(2, exponent) - 1)
 }
 
-},{"./util/assertString":98,"bignumber.js":87}],97:[function(require,module,exports){
+},{"./util/assertString":135,"bignumber.js":124}],134:[function(require,module,exports){
 const assertString = require('./util/assertString')
 const isAddress = require('./isAddress')
 const isBoolean = require('./isBoolean')
@@ -17409,7 +19171,7 @@ function isValid(type, value) {
   return true
 }
 
-},{"./isAddress":91,"./isBoolean":92,"./isBytes":94,"./isInt":95,"./isUint":96,"./util/assertString":98}],98:[function(require,module,exports){
+},{"./isAddress":128,"./isBoolean":129,"./isBytes":131,"./isInt":132,"./isUint":133,"./util/assertString":135}],135:[function(require,module,exports){
 module.exports = assertString
 
 function assertString(input) {
@@ -17435,2012 +19197,7 @@ function assertString(input) {
   }
 }
 
-},{}],99:[function(require,module,exports){
-const bel = require('bel')
-const csjs = require('csjs-inject')
-const validator = require('solidity-validator')
-
-module.exports = displayByteInput
-
-function displayByteInput ({ theme: { classes: css }, type, cb, focus, blur }) {
-  return input = bel`<div class=${css.byteField}> <input class=${css.inputField} data-type=${type} onclick="${(e)=>e.target.select()}" onfocus=${(e)=>focus(e)} onblur=${(e)=>blur(e)} oninput=${validate} placeholder='0x...'> </div>`
-  function validate (e) {
-    let value = e.target.value
-    cb(validator.getMessage(type, value), e.target, value)
-  }
-}
-
-},{"bel":24,"csjs-inject":31,"solidity-validator":88}],100:[function(require,module,exports){
-arguments[4][54][0].apply(exports,arguments)
-},{"dup":54}],101:[function(require,module,exports){
-arguments[4][55][0].apply(exports,arguments)
-},{"./lib/getMessage":102,"./lib/getRange":103,"./lib/isAddress":104,"./lib/isBoolean":105,"./lib/isInt":106,"./lib/isUint":107,"./lib/isValid":108,"dup":55}],102:[function(require,module,exports){
-arguments[4][56][0].apply(exports,arguments)
-},{"./isValid":108,"./util/assertString":109,"dup":56}],103:[function(require,module,exports){
-arguments[4][57][0].apply(exports,arguments)
-},{"./util/assertString":109,"bignumber.js":100,"dup":57}],104:[function(require,module,exports){
-arguments[4][58][0].apply(exports,arguments)
-},{"./util/assertString":109,"dup":58,"web3-utils":188}],105:[function(require,module,exports){
-arguments[4][59][0].apply(exports,arguments)
-},{"./util/assertString":109,"dup":59}],106:[function(require,module,exports){
-arguments[4][60][0].apply(exports,arguments)
-},{"./util/assertString":109,"bignumber.js":100,"dup":60}],107:[function(require,module,exports){
-arguments[4][61][0].apply(exports,arguments)
-},{"./util/assertString":109,"bignumber.js":100,"dup":61}],108:[function(require,module,exports){
-arguments[4][62][0].apply(exports,arguments)
-},{"./isAddress":104,"./isBoolean":105,"./isInt":106,"./isUint":107,"./util/assertString":109,"dup":62}],109:[function(require,module,exports){
-arguments[4][63][0].apply(exports,arguments)
-},{"dup":63}],110:[function(require,module,exports){
-const bel = require('bel')
-const csjs = require('csjs-inject')
-const validator = require('solidity-validator')
-const bigNumber = require('bignumber.js')
-
-module.exports = displayIntegerInput
-
-function displayIntegerInput ({ theme: { classes: css }, type, cb, focus, blur}) {
-  const splitType = type.split('[')[0] // split to get basic type (bool, uint8)
-  const min = validator.getRange(splitType).MIN
-  const max = validator.getRange(splitType).MAX
-  const title = `Valid values for type ${splitType} are from ${min} to ${max}`
-  const num = bel`<input data-type=${splitType} type="number" class=${css.integerValue} value="0" onfocus=${(e)=>focus(e)} onblur=${(e)=>blur(e)} onclick="${(e)=>e.target.select()}" onchange=${(e)=>validate(e)} oninput=${(e)=>sliderUpdate(e, splitType)} onkeydown=${(e)=>keysUpdating(e, splitType)}>`
-  const slider = bel`<input data-type=${splitType} class=${css.integerSlider} type="range" title=${title} min=${min} max=${max} value="0" step=1 onblur=${(e)=>blur(e)} onchange=${(e)=>validate(e)} oninput=${(e)=>numUpdate(e, splitType)} onfocus=${(e)=>focus(e)}>`
-  return bel`<div class=${css.integerField}>
-    ${slider}
-    ${num}
-  </div>`
-  function numUpdate (e, splitType) {
-    num.value = num.title = bigNumber(e.target.value).toFixed(0)
-    validate(e, splitType)
-  }
-  function validate (e) {
-    const value = e.target.value
-    cb(validator.getMessage(splitType, value), e.target, value)
-  }
-  function keysUpdating (e, splitType) {
-    const key = e.which
-    const val = parseInt(e.target.value)
-    if (key === 38 && val != slider.max) {
-      slider.value = num.value = val + 1
-    }
-    else if (key === 40 && val != slider.min) {
-      slider.value = num.value = val - 1
-    }
-    validate(e)
-  }
-  function sliderUpdate (e, splitType) {
-    if (e.target.value === '') {
-      slider.value = num.value = 0
-    } else {
-      slider.value = e.target.value
-    }
-    validate(e, splitType)
-  }
-}
-
-},{"bel":24,"bignumber.js":25,"csjs-inject":31,"solidity-validator":101}],111:[function(require,module,exports){
-const bel = require("bel")
-const csjs = require("csjs-inject")
-
-module.exports = inputPayable
-
-function inputPayable ({ theme: { classes: css }, label, focus, blur }) {
-
-  const input = bel`
-    <div class=${css.inputContainer}>
-      <label class=${css.inputParam} title="data type: ${label}">value</label>
-      <div class=${css.inputArea}>
-        <input class=${css.inputField} type="number" onfocus=${(e)=>focus(e)} onblur=${(e)=>blur(e)} placeholder="999" oninput=${validate}>
-        ${currencySelector(css)}
-        <div class=${css.ethIcon} title="Select amount you want to send with this function!"><i class="fab fa-ethereum"></i></div>
-      </div>
-    </div>`
-
-  return input
-  function validate (e) {
-    // @TODO
-  }
-
-  function currencySelector (css) {
-    var button = bel`
-      <select class=${css.currency}>
-        <option value="wei">wei</option>
-        <option value="k-wei">k-wei</option>
-        <option value="m-wei">m-wei</option>
-        <option value="g-wei">g-wei</option>
-        <option value="micro">micro</option>
-        <option value="milli">milli</option>
-        <option value="ether">ether</option>
-        <option value="k-ether">k-ether</option>
-        <option value="m-ether">m-ether</option>
-        <option value="g-ether">g-ether</option>
-        <option value="t-ether">t-ether</option>
-      </select>`
-    return button
-  }
-}
-
-
-},{"bel":24,"csjs-inject":31}],112:[function(require,module,exports){
-arguments[4][54][0].apply(exports,arguments)
-},{"dup":54}],113:[function(require,module,exports){
-arguments[4][55][0].apply(exports,arguments)
-},{"./lib/getMessage":114,"./lib/getRange":115,"./lib/isAddress":116,"./lib/isBoolean":117,"./lib/isInt":118,"./lib/isUint":119,"./lib/isValid":120,"dup":55}],114:[function(require,module,exports){
-arguments[4][56][0].apply(exports,arguments)
-},{"./isValid":120,"./util/assertString":121,"dup":56}],115:[function(require,module,exports){
-arguments[4][57][0].apply(exports,arguments)
-},{"./util/assertString":121,"bignumber.js":112,"dup":57}],116:[function(require,module,exports){
-arguments[4][58][0].apply(exports,arguments)
-},{"./util/assertString":121,"dup":58,"web3-utils":188}],117:[function(require,module,exports){
-arguments[4][59][0].apply(exports,arguments)
-},{"./util/assertString":121,"dup":59}],118:[function(require,module,exports){
-arguments[4][60][0].apply(exports,arguments)
-},{"./util/assertString":121,"bignumber.js":112,"dup":60}],119:[function(require,module,exports){
-arguments[4][61][0].apply(exports,arguments)
-},{"./util/assertString":121,"bignumber.js":112,"dup":61}],120:[function(require,module,exports){
-arguments[4][62][0].apply(exports,arguments)
-},{"./isAddress":116,"./isBoolean":117,"./isInt":118,"./isUint":119,"./util/assertString":121,"dup":62}],121:[function(require,module,exports){
-arguments[4][63][0].apply(exports,arguments)
-},{"dup":63}],122:[function(require,module,exports){
-const bel = require('bel')
-const csjs = require('csjs-inject')
-const validator = require('solidity-validator')
-
-module.exports = displayStringInput
-
-function displayStringInput ({ theme: { classes: css }, cb, focus, blur }) {
-  const input = bel`<div class=${css.stringField}>
-    <input class=${css.inputField} data-type="string" onclick="${(e)=>e.target.select()}" onblur=${(e)=>blur(e)} onfocus=${(e)=>focus(e)} oninput=${validate} placeholder='abc'>
-  </div>`
-  return input
-  function validate (e) {
-    const value = e.target.value
-    cb(validator.getMessage('string', value), e.target, value)
-  }
-  function focus(e) {
-    const value = e.target.value
-    const inputContainer = e.target.parentNode.parentNode.parentNode
-    console.log(inputContainer);
-    cb(validator.getMessage('string', value), e.target, value, inputContainer)
-  }
-}
-
-},{"bel":24,"csjs-inject":31,"solidity-validator":113}],123:[function(require,module,exports){
-var inserted = {};
-
-module.exports = function (css, options) {
-    if (inserted[css]) return;
-    inserted[css] = true;
-    
-    var elem = document.createElement('style');
-    elem.setAttribute('type', 'text/css');
-
-    if ('textContent' in elem) {
-      elem.textContent = css;
-    } else {
-      elem.styleSheet.cssText = css;
-    }
-    
-    var head = document.getElementsByTagName('head')[0];
-    if (options && options.prepend) {
-        head.insertBefore(elem, head.childNodes[0]);
-    } else {
-        head.appendChild(elem);
-    }
-};
-
-},{}],124:[function(require,module,exports){
-/**
- * Returns a `Boolean` on whether or not the a `String` starts with '0x'
- * @param {String} str the string input value
- * @return {Boolean} a boolean if it is or is not hex prefixed
- * @throws if the str input is not a string
- */
-module.exports = function isHexPrefixed(str) {
-  if (typeof str !== 'string') {
-    throw new Error("[is-hex-prefixed] value must be type 'string', is currently type " + (typeof str) + ", while checking isHexPrefixed.");
-  }
-
-  return str.slice(0, 2) === '0x';
-}
-
-},{}],125:[function(require,module,exports){
-const indexedDB = window.indexedDB
-const console = window.console
-
-module.exports = kvidb
-
-const dbname = 'kvidb'
-// const dbopts = { keyPath: 'key' }
-const version = 1
-
-function kvidb (opts) {
-  const name = opts ? opts.name || ('' + opts) : 'store'
-  const scope = `${dbname}-${name}`
-  var IDB
-  const makeDB = done => {
-    var idb = indexedDB.open(dbname, version)
-    idb.onerror = e => console.error(`[${dbname}]`, idb.error)
-    idb.onupgradeneeded = () => idb.result.createObjectStore(scope/*, dbopts*/)
-    idb.onsuccess = () => done(IDB = idb.result)
-  }
-  const use = (mode, done) => {
-    const next = (IDB, tx) => (tx = IDB.transaction([scope], mode),
-      done(tx.objectStore(scope), tx))
-    IDB ? next(IDB) : makeDB(next)
-  }
-  const api = {
-    get: (key, done) => use('readonly', (store, tx) => {
-      const req = store.get('' + key)
-      tx.oncomplete = e => next(req.error, req.result)
-      const next = (e, x) => {
-        e ? done(e) : x === undefined ? done(`key "${key}" is undefined`)
-        : done(null, x)
-      }
-    }),
-    put: (key, val, done) => val === undefined ? done('`value` is undefined')
-      : use('readwrite', (store, tx) => {
-        const req = store.put(val, '' + key)
-        tx.oncomplete = e => done(req.error, !req.error)
-    }),
-    del: (key, done) => api.get('' + key, (e, x) => {
-      e ? done(e) : use('readwrite', (store, tx) => {
-        const req = store.delete('' + key)
-        tx.oncomplete = e => done(req.error, !req.error)
-      })
-    }),
-    clear: done => use('readwrite',  (store, tx) => {
-      const req = store.clear()
-      tx.oncomplete = e => done(req.error, !req.error)
-    }),
-    length: done => use('readwrite',  (store, tx) => {
-      const req = store.count()
-      tx.oncomplete = e => done(req.error, req.result)
-    }),
-    close: done => (IDB ? IDB.close() : makeDB(IDB => IDB.close()), done(null, true)),
-    batch: (ops, done) => done('@TODO: implement `.batch(...)`'),
-    keys: done => use('readonly', (store, tx, keys = []) => {
-      const openCursor = (store.openKeyCursor || store.openCursor)
-      const req = openCursor.call(store)
-      tx.oncomplete = e => done(req.error, req.error ? undefined : keys)
-      req.onsuccess = () => {
-        const x = req.result
-        if (x) (keys.push(x.key), x.continue())
-      }
-    })
-    // key: (n, done) => (n < 0) ? done(null) : use('readonly', store => {
-    //   var advanced = false
-    //   var req = store.openCursor()
-    //   req.onsuccess = () => {
-    //     var cursor = req.result
-    //     if (!cursor) return
-    //     if (n === 0 || advanced) return // Either 1) maybe return first key, or 2) we've got the nth key
-    //     advanced = true // Otherwise, ask the cursor to skip ahead n records
-    //     cursor.advance(n)
-    //   }
-    //   req.onerror = () => (console.error('Error in asyncStorage.key(): '), req.error.name)
-    //   req.onsuccess = () => done((req.result || {}).key || null)
-    // }),
-    // This would be store.getAllKeys(), but it isn't supported by Edge or Safari.
-    // And openKeyCursor isn't supported by Safari.
-    // tx.oncomplete = () => done(null, keys)
-  }
-  return api
-}
-
-},{}],126:[function(require,module,exports){
-arguments[4][51][0].apply(exports,arguments)
-},{"dup":51}],127:[function(require,module,exports){
-var BN = require('bn.js');
-var stripHexPrefix = require('strip-hex-prefix');
-
-/**
- * Returns a BN object, converts a number value to a BN
- * @param {String|Number|Object} `arg` input a string number, hex string number, number, BigNumber or BN object
- * @return {Object} `output` BN object of the number
- * @throws if the argument is not an array, object that isn't a bignumber, not a string number or number
- */
-module.exports = function numberToBN(arg) {
-  if (typeof arg === 'string' || typeof arg === 'number') {
-    var multiplier = new BN(1); // eslint-disable-line
-    var formattedString = String(arg).toLowerCase().trim();
-    var isHexPrefixed = formattedString.substr(0, 2) === '0x' || formattedString.substr(0, 3) === '-0x';
-    var stringArg = stripHexPrefix(formattedString); // eslint-disable-line
-    if (stringArg.substr(0, 1) === '-') {
-      stringArg = stripHexPrefix(stringArg.slice(1));
-      multiplier = new BN(-1, 10);
-    }
-    stringArg = stringArg === '' ? '0' : stringArg;
-
-    if ((!stringArg.match(/^-?[0-9]+$/) && stringArg.match(/^[0-9A-Fa-f]+$/))
-      || stringArg.match(/^[a-fA-F]+$/)
-      || (isHexPrefixed === true && stringArg.match(/^[0-9A-Fa-f]+$/))) {
-      return new BN(stringArg, 16).mul(multiplier);
-    }
-
-    if ((stringArg.match(/^-?[0-9]+$/) || stringArg === '') && isHexPrefixed === false) {
-      return new BN(stringArg, 10).mul(multiplier);
-    }
-  } else if (typeof arg === 'object' && arg.toString && (!arg.pop && !arg.push)) {
-    if (arg.toString(10).match(/^-?[0-9]+$/) && (arg.mul || arg.dividedToIntegerBy)) {
-      return new BN(arg.toString(10), 10);
-    }
-  }
-
-  throw new Error('[number-to-bn] while converting number ' + JSON.stringify(arg) + ' to BN.js instance, error: invalid number value. Value must be an integer, hex string, BN or BigNumber instance. Note, decimals are not supported.');
-}
-
-},{"bn.js":126,"strip-hex-prefix":185}],128:[function(require,module,exports){
-module.exports = window.crypto;
-},{}],129:[function(require,module,exports){
-module.exports = require('crypto');
-},{"crypto":128}],130:[function(require,module,exports){
-var randomHex = function(size, callback) {
-    var crypto = require('./crypto.js');
-    var isCallback = (typeof callback === 'function');
-
-    
-    if (size > 65536) {
-        if(isCallback) {
-            callback(new Error('Requested too many random bytes.'));
-        } else {
-            throw new Error('Requested too many random bytes.');
-        }
-    };
-
-
-    // is node
-    if (typeof crypto !== 'undefined' && crypto.randomBytes) {
-
-        if(isCallback) {
-            crypto.randomBytes(size, function(err, result){
-                if(!err) {
-                    callback(null, '0x'+ result.toString('hex'));
-                } else {
-                    callback(error);
-                }
-            })
-        } else {
-            return '0x'+ crypto.randomBytes(size).toString('hex');
-        }
-
-    // is browser
-    } else {
-        var cryptoLib;
-
-        if (typeof crypto !== 'undefined') {
-            cryptoLib = crypto;
-        } else if(typeof msCrypto !== 'undefined') {
-            cryptoLib = msCrypto;
-        }
-
-        if (cryptoLib && cryptoLib.getRandomValues) {
-            var randomBytes = cryptoLib.getRandomValues(new Uint8Array(size));
-            var returnValue = '0x'+ Array.from(randomBytes).map(function(arr){ return arr.toString(16); }).join('');
-
-            if(isCallback) {
-                callback(null, returnValue);
-            } else {
-                return returnValue;
-            }
-
-        // not crypto object
-        } else {
-            var error = new Error('No "crypto" object available. This Browser doesn\'t support generating secure random bytes.');
-
-            if(isCallback) {
-                callback(error);
-            } else {
-               throw error;
-            }
-        }
-    }
-};
-
-
-module.exports = randomHex;
-
-},{"./crypto.js":129}],131:[function(require,module,exports){
-module.exports = {
-  type: 'github',
-  parser: require('./parser'),
-  resolver: require('./resolver'),
-  match: /^(https?:\/\/)?(www.)?github.com\/([^/]*\/[^/]*)\/(.*)/
-};
-},{"./parser":132,"./resolver":133}],132:[function(require,module,exports){
-const replaceContent = require('solc-import').replaceContent
-const resolver = require('./resolver')
-// https://github.com/<owner>/<repo>/<path_to_the_file>
-
-module.exports = async function(importPath) {
-  const [, , , root, path] = require('./index').match.exec(importPath)
-
-  let url = `https://raw.githubusercontent.com/${root}/master/${path}`
-  try {
-    let data = await getData(url)
-    if (isSymbolicLink(data)) {
-      const tmps = url.split('/')
-      const filename = tmps[tmps.length - 1]
-      url = url.replace(filename, data)
-      data = await getData(url)
-    } else {
-      data = replaceContent(data, importPath, resolver)
-    }
-    return data
-  } catch (error) {
-    throw error
-  }
-}
-
-async function getData(url) {
-  let response = await fetch(url, { method: 'GET' })
-  let data = await response.text()
-  if (!response.ok || response.status !== 200) throw Error('Content ' + data)
-  return data
-}
-
-function isSymbolicLink(data) {
-  if (data.length < 50 && data.indexOf('.sol')) return true
-  return false
-}
-
-// async function getSource(importPath, root, path) {
-//   const url = `https://api.github.com/repos/${root}/contents/${path}`;
-//   // console.log('url:', url);
-//   try {
-//     const response = await fetch(url, { method: 'GET' });
-//     let data = await response.text();
-//     if (!response.ok || response.status !== 200) throw Error(data);
-//     data = JSON.parse(data);
-//     data.content = window.atob(data.content);
-//     data.content = replaceContent(data.content, importPath, pathResolve);
-//     if ('content' in data) return data.content;
-//     if ('message' in data) throw Error(data.message);
-//     throw Error('Content not received');
-//   } catch (error) {
-//     // Unknown transport error
-//     throw error;
-//   }
-// }
-
-},{"./index":131,"./resolver":133,"solc-import":146}],133:[function(require,module,exports){
-module.exports = function (content, from, subImportPath) {
-  let newContent = content;
-  let url = new window.URL(subImportPath, from);
-  let fixedPath = url.href;
-  newContent = newContent.replace(`import '${subImportPath}'`, `import '${fixedPath}'`);
-  newContent = newContent.replace(`import "${subImportPath}"`, `import "${fixedPath}"`);
-  return newContent;
-};
-},{}],134:[function(require,module,exports){
-module.exports = {
-  type: 'http',
-  parser: require('./parser'),
-  resolver: require('./resolver'),
-  match: /^(http|https?:\/\/?(.*))$/
-};
-
-// const match = /^(http?:\/\/?(.*))$/;
-},{"./parser":135,"./resolver":136}],135:[function(require,module,exports){
-const replaceContent = require('solc-import').replaceContent;
-const resolver = require('./resolver');
-
-module.exports = async function (importPath) {
-  const [, url,] = require('./index').match.exec(importPath);
-  try {
-    const response = await fetch(url, { method: 'GET' });
-    let data = await response.text();
-    if (!response.ok || response.status !== 200) throw Error('Content ' + data);
-    data = replaceContent(data, importPath, resolver);
-    return data;
-  } catch (error) {
-    throw error;
-  }
-};
-},{"./index":134,"./resolver":136,"solc-import":146}],136:[function(require,module,exports){
-arguments[4][133][0].apply(exports,arguments)
-},{"dup":133}],137:[function(require,module,exports){
-module.exports = {
-  type: 'ipfs',
-  parser: require('./parser'),
-  resolver: require('./resolver'),
-  match: /^(ipfs:\/\/?.+)/
-};
-},{"./parser":138,"./resolver":139}],138:[function(require,module,exports){
-module.exports = async function (importPath) {
-  let [, url] = require('./index').match.exec(importPath);
-  // replace ipfs:// with /ipfs/
-  url = url.replace(/^ipfs:\/\/?/, 'ipfs/');
-  url = 'https://gateway.ipfs.io/' + url;
-
-  try {
-    const response = await fetch(url, { method: 'GET' });
-    const data = await response.text();
-    if (!response.ok || response.status !== 200) throw Error(data);
-    return data;
-  } catch (error) {
-    throw error;
-  }
-};
-},{"./index":137}],139:[function(require,module,exports){
-arguments[4][133][0].apply(exports,arguments)
-},{"dup":133}],140:[function(require,module,exports){
-module.exports = {
-  type: 'swarm',
-  parser: require('./parser'),
-  resolver: require('./resolver'),
-  match: /^(bzz[ri]?:\/\/?(.*))$/
-};
-},{"./parser":141,"./resolver":142}],141:[function(require,module,exports){
-module.exports = async function (importPath) {
-  const [, url,] = require('./index').match.exec(importPath);
-  try {
-    let content = await swarmgw.get(url);
-    return content;
-  } catch (error) {
-    throw error;
-  }
-};
-
-const swarmgw = swarmgwMaker();
-
-
-async function getFile(gateway, url) {
-  const httpsURL = gateway + '/' + url;
-  try {
-    const response = await fetch(httpsURL, { method: 'GET' });
-    const data = await response.text();
-    if (!response.ok || response.status !== 200) throw Error(data);
-    return data;
-  } catch (error) {
-    throw error;
-  }
-}
-
-function swarmgwMaker(opts) {
-  opts = opts || {};
-  var gateway;
-  if (opts.gateway) {
-    gateway = opts.gateway;
-  } else if (opts.mode === 'http') {
-    gateway = 'http://swarm-gateways.net';
-  } else {
-    gateway = 'https://swarm-gateways.net';
-  }
-  return {
-    get: async function (url) {
-      return await getFile(gateway, url);
-    }
-  };
-}
-
-},{"./index":140}],142:[function(require,module,exports){
-arguments[4][133][0].apply(exports,arguments)
-},{"dup":133}],143:[function(require,module,exports){
-const getImports = require('./getImports');
-const isExistImport = require('./isExistImport');
-
-module.exports = combineSource;
-
-async function combineSource(source, getImportContent) {
-  try {
-    const allImportPath = getImports(source);
-    let allSubImportPath = [];
-    let sourceMap = new Map();
-
-    for (let importPath of allImportPath) {
-      let content = await getImportContent(importPath);
-      allSubImportPath = allSubImportPath.concat(getImports(content));
-      sourceMap.set(importPath, content);
-    }
-
-    sourceMap = await getMergeSubImportMap(allSubImportPath, sourceMap, getImportContent);
-
-    let sources = [];
-    for (let [key, value] of sourceMap) {
-      sources.push({ path: key, content: value });
-    }
-    return sources;
-  } catch (error) {
-    throw(error);
-  }
-}
-
-async function getMergeSubImportMap(allSubImportPath, sourceMap, getImportContent) {
-  if (allSubImportPath.length != 0) {
-    let search = true;
-    let nextAllSubImportPath = [];
-    while (search) {
-      for (let subImportPath of allSubImportPath) {
-        if (sourceMap.has(subImportPath)) break;
-        let content = await getImportContent(subImportPath);
-        sourceMap.set(subImportPath, content);
-        if (isExistImport(content)) {
-          let sub2ImportPath = getImports(content);
-          nextAllSubImportPath = nextAllSubImportPath.concat(sub2ImportPath);
-        }
-      }
-      search = nextAllSubImportPath.length != 0;
-      allSubImportPath = nextAllSubImportPath;
-      nextAllSubImportPath = [];
-    }
-  }
-  return sourceMap;
-}
-},{"./getImports":144,"./isExistImport":147}],144:[function(require,module,exports){
-module.exports = getImports;
-
-function getImports(source) {
-  let matches = [];
-  let ir = /^(.*import){1}(.+){0,1}\s['"](.+)['"];/gm;
-  let match = null;
-  while ((match = ir.exec(source))) {
-    matches.push(match[3]);
-  }
-  return matches;
-}
-},{}],145:[function(require,module,exports){
-const combineSource = require('./combineSource');
-
-module.exports = getReadCallback;
-
-async function getReadCallback(sourceCode, getImportContent) {
-  let sources = await combineSource(sourceCode, getImportContent);
-
-  // import: it must be sync function
-  function readCallback(path) {
-    for (let source of sources) {
-      if (source.path == path) {
-        return { contents: source.content }; 
-      } 
-    }
-  }
-  return readCallback;
-}
-},{"./combineSource":143}],146:[function(require,module,exports){
-module.exports = {
-  combineSource: require('./combineSource'),
-  getImports: require('./getImports'),
-  getReadCallback: require('./getReadCallback'),
-  isExistImport: require('./isExistImport'),
-  replaceContent: require('./replaceContent')
-};
-},{"./combineSource":143,"./getImports":144,"./getReadCallback":145,"./isExistImport":147,"./replaceContent":148}],147:[function(require,module,exports){
-const getImports = require('./getImports');
-
-module.exports = isExistImport;
-
-function isExistImport(sourcecode) {
-  const allImportPath = getImports(sourcecode);
-  return allImportPath.length != 0;
-}
-},{"./getImports":144}],148:[function(require,module,exports){
-const getImports = require('./getImports');
-const isExistImport = require('./isExistImport');
-
-module.exports = replaceContent;
-
-function replaceContent(content, from, resolver) {
-  let newContent = content;
-  if (isExistImport(content)) {
-    const allSubImportPath = getImports(content);
-    for (let subImportPath of allSubImportPath) {
-      if (isExplicitlyRelative(subImportPath)) {
-        newContent = resolver(newContent, from, subImportPath);
-      }
-    }
-  }
-  return newContent;
-}
-
-function isExplicitlyRelative(importPath) {
-  return importPath.indexOf('.') === 0;
-}
-},{"./getImports":144,"./isExistImport":147}],149:[function(require,module,exports){
-const solcImport = require('solc-import');
-const solcResolver = require('solc-resolver');
-const solcjsCore = require('solcjs-core');
-
-module.exports = getCompile;
-
-function getCompile(oldSolc) {
-  let compile;
-  Object.keys(oldSolc).forEach(key => {
-    if (key != 'compile') return;
-
-    compile = async function (sourcecode = '', getImportContent) {
-      if (solcImport.isExistImport(sourcecode)) {
-        if (getImportContent == undefined) {
-          getImportContent = getContent();
-        } else if (typeof getImportContent !== 'function') {
-          throw Error('getContent should be a funcion.');
-        }
-      }
-
-      let readCallback = await solcjsCore.getReadCallback(
-        sourcecode,
-        getImportContent
-      );
-      return solcjsCore.wrapperCompile(oldSolc, sourcecode, readCallback);
-    };
-  });
-  return compile;
-}
-
-function getContent() {
-  const ResolverEngine = require('solc-resolver').resolverEngine;
-  let resolverEngine = new ResolverEngine();
-
-  let resolveGithub = require('resolve-github');
-  resolverEngine.addResolver(resolveGithub);
-
-  let resolveHttp = require('resolve-http');
-  resolverEngine.addResolver(resolveHttp);
-
-  let resolveIPFS = require('resolve-ipfs');
-  resolverEngine.addResolver(resolveIPFS);
-
-  let resolveSwarm = require('resolve-swarm');
-  resolverEngine.addResolver(resolveSwarm);
-
-  const getImportContent = async function (path) {
-    return await resolverEngine.require(path);
-  };
-
-  return getImportContent;
-}
-
-},{"resolve-github":131,"resolve-http":134,"resolve-ipfs":137,"resolve-swarm":140,"solc-import":146,"solc-resolver":152,"solcjs-core":172}],150:[function(require,module,exports){
-
-let solcjs = require('./solc');
-const solcVersion = require('solc-version');
-
-module.exports = solcjs;
-
-solcjs.versions = solcVersion.versions;
-solcjs.versionsSkipVersion5 = solcVersion.versionsSkipVersion5;
-solcjs.version2url = solcVersion.version2url;
-},{"./solc":151,"solc-version":156}],151:[function(require,module,exports){
-const solcVersion = require('solc-version');
-const getCompile = require('./getCompile');
-const solcjsCore = require('solcjs-core');
-const solcWrapper = solcjsCore.solcWrapper.wrapper;
-
-function solcjs(_version) {
-  return new Promise(async (resolve, reject) => {
-    let newCompile;
-    let version;
-
-    try {
-      version = await solcjsCore.getVersion(_version);
-      
-      console.time('[fetch compiler]');
-      let url = await solcVersion.version2url(version);
-      let compilersource = await solcjsCore.getCompilersource(url);
-      console.timeEnd('[fetch compiler]');
-
-      console.time('[load compiler]');
-      const solc = solcjsCore.loadModule(compilersource);
-      console.timeEnd('[load compiler]');
-
-      console.time('[wrap compiler]');
-      let _compiler = solcWrapper(solc);
-      _compiler.opts = { version, url };
-
-      newCompile = getCompile(_compiler);
-      newCompile.version = { name: version, url };
-      console.timeEnd('[wrap compiler]');
-
-      try {
-        await solcjsCore.pretest(newCompile, version);
-        resolve(newCompile);
-      } catch (err) { throw new Error('pretest failed'); }
-    } catch (error) {
-      console.error(error);
-      reject(error);
-    }
-  });
-}
-
-module.exports = solcjs;
-},{"./getCompile":149,"solc-version":156,"solcjs-core":172}],152:[function(require,module,exports){
-module.exports = {
-  resolverEngine: require('./resolverEngine')
-};
-},{"./resolverEngine":153}],153:[function(require,module,exports){
-module.exports = class ResolverEngine {
-  constructor() {
-    this.resolvers = [];
-    this.previouslyHandled = {};
-  }
-
-  async getContent(url) {
-    for (let resolve of this.resolvers) {
-      if (this.getResolverType(url) == resolve.type) {
-        const result = await resolve.parser(url);
-        if (result) return result;
-      }
-    }
-    return;
-  }
-
-  // get data
-  async require(importPath) {
-    const imported = this.previouslyHandled[importPath];
-    // get source from cache
-    if (imported) {
-      let result = this.getResultFromImported(imported, importPath);
-      return result.content;
-    }
-
-    const handlerType = this.getResolverType(importPath);
-    const content = await this.getContent(importPath);
-
-    this.previouslyHandled[importPath] = {
-      content: content,
-      type: handlerType,
-      importPath
-    };
-
-    return content;
-  }
-
-  // chain pattern
-  addResolver(resolver) {
-    this.resolvers.push(resolver);
-    return this;
-  }
-
-  getResultFromImported(imported, importPath) {
-    return {
-      content: imported.content,
-      type: imported.type,
-      importPath
-    };
-  }
-
-  getResolverType(url) {
-    for (let resolver of this.resolvers) {
-      let match = resolver.match.exec(url);
-      if (match) {
-        return resolver.type;
-      }
-    }
-    return;
-  }
-
-  isMatch(importPath) {
-    let found = false;
-    if (this.resolvers.length == 0) return false;
-    for (let resolver of this.resolvers) {
-      if (found) break;
-      const match = resolver.match.exec(importPath);
-      if (match) found = true;
-    }
-    return !found;
-  }
-};
-},{}],154:[function(require,module,exports){
-const baseURL = 'https://solc-bin.ethereum.org/bin';
-
-const ajaxCaching = require('ajax-caching');
-const promiseAjax = ajaxCaching.promiseAjax;
-
-module.exports = getlist;
-
-async function getlist() {
-  try {
-    const opts = {
-      url: `${baseURL}/list.json`,
-      caching: true,
-      transform: function (data) {
-        if (data.releases) throw Error('get list fail');
-        return data;
-      }
-    };
-    return await promiseAjax(opts);
-  } catch (error) {
-    throw error;
-  }
-}
-},{"ajax-caching":21}],155:[function(require,module,exports){
-module.exports = groupByVersion;
-
-function removeAllZeroPointFiveVersion(select) {
-  select.nightly = select.nightly.filter(x => !~x.indexOf('v0.5.'));
-  select.all = select.all.filter(x => !~x.indexOf('v0.5.'));
-  select.releases = select.releases.filter(x => !~x.indexOf('v0.5.'));
-}
-
-function groupByVersion(data, skip5 = true) {
-  const { releases, nightly, all } = data;
-  let select = {};
-  select.nightly = Object.keys(nightly).reverse();
-  select.all = Object.keys(all).reverse();
-  select.releases = Object.keys(releases).reverse();
-  if (skip5) removeAllZeroPointFiveVersion(select);
-  return select;
-}
-},{}],156:[function(require,module,exports){
-module.exports = {
-  version2url: require('./version2url'),
-  versions: require('./versions'),
-  versionsSkipVersion5: require('./versionsSkipVersion5')
-};
-},{"./version2url":158,"./versions":159,"./versionsSkipVersion5":160}],157:[function(require,module,exports){
-module.exports = processList;
-
-function processList(json) {
-  const data = JSON.parse(json);
-  const lists = Object.values(data.builds).reduce(({ agg, d }, x, i, arr) => {
-    const { path, prerelease, version } = x;
-    if (prerelease) {
-      d = prerelease.split('nightly.')[1];
-      var [year0, month0, day0] = d.split('.').map(Number);
-      if ((month0 + '').length < 2) month0 = '0' + month0;
-      if ((day0 + '').length < 2) day0 = '0' + day0;
-      d = [year0, month0, day0].join('.');
-      const entry = [`v${version}-nightly-${d}`, path];
-      agg.nightly.push(entry);
-      agg.all.push(entry);
-    } else {
-      for (var j = i + 1, ahead; j < arr.length && !(ahead = arr[j].prerelease); j++) { }
-      if (ahead) ahead = ahead.split('nightly.')[1];
-      else ahead = d;
-      if (!d) d = ahead;
-      if (ahead !== d) {
-        var [year1, month1, day1] = d.split('.').map(Number);
-        var [year2, month2, day2] = ahead.split('.').map(Number);
-        var d1 = new Date(year1, month1 - 1, day1);
-        var d2 = new Date(year2, month2 - 1, day2);
-        var diffDays = parseInt((d2 - d1) / (1000 * 60 * 60 * 24));
-        var d3 = new Date(d1);
-        d3.setDate(d3.getDate() + diffDays / 2);
-        var month = d3.getUTCMonth() + 1;
-        var day = d3.getDate();
-        var year = d3.getUTCFullYear();
-        var current = [year, month, day].join('.');
-      } else {
-        var current = ahead;
-      }
-      var [year0, month0, day0] = current.split('.').map(Number);
-      if ((month0 + '').length < 2) month0 = '0' + month0;
-      if ((day0 + '').length < 2) day0 = '0' + day0;
-      current = [year0, month0, day0].join('.');
-      const entry = [`v${version}-stable-${current}`, path];
-      agg.releases.push(entry);
-      agg.all.push(entry);
-    }
-    return { agg, d };
-  }, { agg: { releases: [], nightly: [], all: [] }, d: null }).agg;
-  const { releases, nightly, all } = lists;
-  lists.releases = releases.reduce((o, x) => ((o[x[0]] = x[1]), o), {});
-  lists.nightly = nightly.reduce((o, x) => ((o[x[0]] = x[1]), o), {});
-  lists.all = all.reduce((o, x) => ((o[x[0]] = x[1]), o), {});
-  return lists;
-}
-},{}],158:[function(require,module,exports){
-const baseURL = 'https://solc-bin.ethereum.org/bin';
-
-const processList = require('./processList');
-const getlist = require('./getlist');
-
-module.exports = version2url;
-
-function version2url(version, list) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      let data = list ? list : await getlist();
-      let select = processList(data);
-      const { all, releases } = select;
-      if (version === 'latest') version = Object.keys(releases)[0];
-      if (version === 'nightly') version = Object.keys(all)[0];
-      var path = all[version];
-      if (!path) return reject(new Error(`unknown version: ${version}`));
-      resolve(`${baseURL}/${path}`);
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-},{"./getlist":154,"./processList":157}],159:[function(require,module,exports){
-const processList = require('./processList');
-const getlist = require('./getlist');
-const groupByVersion = require('./groupByVersion');
-
-module.exports = versions;
-
-function versions(list) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      let data = list ? list : await getlist();
-      let select = groupByVersion(processList(data), false);
-      resolve(select);
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-},{"./getlist":154,"./groupByVersion":155,"./processList":157}],160:[function(require,module,exports){
-const processList = require('./processList');
-const getlist = require('./getlist');
-const groupByVersion = require('./groupByVersion');
-
-module.exports = versionsSkipVersion5;
-
-function versionsSkipVersion5() {
-  return new Promise(async (resolve, reject) => {
-    try {
-      let data = await getlist();
-      let select = groupByVersion(processList(data), true);
-      resolve(select);
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-},{"./getlist":154,"./groupByVersion":155,"./processList":157}],161:[function(require,module,exports){
-arguments[4][143][0].apply(exports,arguments)
-},{"./getImports":162,"./isExistImport":165,"dup":143}],162:[function(require,module,exports){
-arguments[4][144][0].apply(exports,arguments)
-},{"dup":144}],163:[function(require,module,exports){
-arguments[4][145][0].apply(exports,arguments)
-},{"./combineSource":161,"dup":145}],164:[function(require,module,exports){
-module.exports = {
-  combineSource: require('./combineSource'),
-  getImports: require('./getImports'),
-  getReadCallback: require('./getReadCallback'),
-  isExistImport: require('./isExistImport')
-};
-},{"./combineSource":161,"./getImports":162,"./getReadCallback":163,"./isExistImport":165}],165:[function(require,module,exports){
-arguments[4][147][0].apply(exports,arguments)
-},{"./getImports":162,"dup":147}],166:[function(require,module,exports){
-const solcImport = require('solc-import');
-const getReadCallback = require('./getReadCallback');
-const wrapperCompile = require('./wrapperCompile');
-
-module.exports = getCompile;
-
-function getCompile(oldSolc) {
-  let compile;
-  Object.keys(oldSolc).forEach(key => {
-    if (key != 'compile') return;
-
-    compile = async function (sourcecode = '', getImportContent) {
-      if (solcImport.isExistImport(sourcecode)) {
-        if (getImportContent == undefined) throw Error('you should pass getImportContent function in the second pararmeter.');
-      }
-
-      let readCallback = await getReadCallback(
-        sourcecode,
-        getImportContent
-      );
-      return wrapperCompile(oldSolc, sourcecode, readCallback);
-    };
-  });
-  return compile;
-}
-
-},{"./getReadCallback":169,"./wrapperCompile":184,"solc-import":164}],167:[function(require,module,exports){
-const solcImport = require('solc-import');
-
-module.exports = getCompileOutput;
-
-function getCompileOutput(oldSolc, sourcecode, readCallback) {
-  let output;
-  if (solcImport.isExistImport(sourcecode)) {
-    // this is wrapper.compile
-    output = oldSolc.compile(sourcecode, 1, readCallback);
-  } else {
-    output = oldSolc.compile(sourcecode, 1);
-  }
-  return output;
-}
-},{"solc-import":164}],168:[function(require,module,exports){
-const ajaxCaching = require('ajax-caching');
-const promiseAjax = ajaxCaching.promiseAjax;
-
-module.exports = getCompilersource;
-
-async function getCompilersource(compilerURL) {
-  try {
-    const opts = {
-      url: compilerURL,
-      caching: true,
-      transform: function (data) {
-        if (data.substring(0, 10) != 'var Module') {
-          throw Error('get compiler source fail');
-        }
-        return data;
-      }
-    };
-    return await promiseAjax(opts);
-  } catch (error) {
-    throw error;
-  }
-}
-},{"ajax-caching":21}],169:[function(require,module,exports){
-const solcImport = require('solc-import');
-
-module.exports = getReadCallback;
-
-async function getReadCallback(sourcecode, getImportContent) {
-  if (!solcImport.isExistImport(sourcecode)) return;
-  return await solcImport.getReadCallback(sourcecode, getImportContent);
-}
-},{"solc-import":164}],170:[function(require,module,exports){
-module.exports = getStandardError;
-
-function getStandardError(errors) {
-  let result = [];
-  for (let error of errors) {
-    result.push({
-      component: error.component,
-      formattedMessage: error.formattedMessage,
-      message: error.message,
-      type: error.type
-    });
-  }
-  return result;
-}
-},{}],171:[function(require,module,exports){
-const solcVersion = require('solc-version');
-
-module.exports = getVersion;
-
-async function getVersion(_version) {
-  if (typeof _version == 'string' && _version.length < 30) return _version;
-  let select;
-  if (_version == undefined) {
-    select = await solcVersion.versions();
-  } else if (typeof _version == 'string') {
-    select = await solcVersion.versions(_version);
-  } else {
-    throw Error('unknow getVersion error');
-  }
-  return select.releases[0];
-}
-},{"solc-version":156}],172:[function(require,module,exports){
-module.exports = {
-  getCompilersource: require('./getCompilersource'),
-  getReadCallback: require('./getReadCallback'),
-  getVersion: require('./getVersion'),
-  loadModule: require('./loadModule'),
-  pretest: require('./pretest'),
-  wrapperCompile: require('./wrapperCompile'),
-  getCompile: require('./getCompile'),
-  solc: require('./solc'),
-  solcWrapper: require('./solc-wrapper')
-};
-},{"./getCompile":166,"./getCompilersource":168,"./getReadCallback":169,"./getVersion":171,"./loadModule":173,"./pretest":174,"./solc":183,"./solc-wrapper":176,"./wrapperCompile":184}],173:[function(require,module,exports){
-module.exports = loadModule;
-
-// HELPER
-function loadModule(sourcecode) {
-  let script = window.document.createElement('script');
-  let exists = true;
-  if (!('Module' in window)) {
-    exists = false;
-    window.Module = {};
-  }
-  script.text = `window.Module=((Module)=>{${sourcecode};return Module})()`;
-  window.document.head.appendChild(script);
-  window.document.head.removeChild(script);
-  const compiler = window.Module;
-  if (!exists) delete window.Module;
-  return compiler;
-}
-
-// function loadModule(sourcecode) {
-//   let script = window.document.createElement('script');
-//   let oldModule, exists;
-//   if ('Module' in window) {
-//     oldModule = window.Module;
-//     exists = true;
-//   } else {
-//     window.Module = {};
-//   }
-//   script.text = `window.Module=((Module)=>{${sourcecode};return Module})()`;
-//   window.document.head.appendChild(script);
-//   window.document.head.removeChild(script);
-//   const compiler = window.Module;
-//   if (exists) {
-//     window.Module = oldModule;
-//   } else {
-//     delete window.Module;
-//   }
-//   return compiler;
-// }
-},{}],174:[function(require,module,exports){
-module.exports = pretest;
-
-async function pretest(compile) {
-  try {
-    let content = `
-    contract NewContract {
-      function f() public {}
-    }`;
-    await compile(content);
-  } catch (error) {
-    console.error('pretest failed');
-    throw error;
-  }
-}
-},{}],175:[function(require,module,exports){
-// from: sindresorhus/semver-regex
-var semverRegex = /\bv?(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[\da-z-]+(?:\.[\da-z-]+)*)?(?:\+[\da-z-]+(?:\.[\da-z-]+)*)?\b/ig;
-
-// from: substack/semver-compare
-function cmp (a, b) {
-  var pa = a.split('.'), pb = b.split('.');
-  for (var i = 0; i < 3; i++) {
-    var na = Number(pa[i]), nb = Number(pb[i]);
-    if (na > nb) return 1;
-    if (nb > na) return -1;
-    if (!isNaN(na) && isNaN(nb)) return 1;
-    if (isNaN(na) && !isNaN(nb)) return -1;
-  }
-  return 0;
-}
-
-// semver.lt('1.2.3', '9.8.7') // true
-var semver = {
-  lt(a, b) { 
-    var A = a.match(semverRegex), B = b.match(semverRegex);
-    if (A && A.length === 1 && B && B.length === 1) {
-      return cmp(A[0], B[0]) === -1;
-    }
-  }
-};
-
-function update (compilerVersion, abi) {
-  var hasConstructor = false;
-  var hasFallback = false;
-
-  for (var i = 0; i < abi.length; i++) {
-    var item = abi[i];
-
-    if (item.type === 'constructor') {
-      hasConstructor = true;
-
-      // <0.4.5 assumed every constructor to be payable
-      if (semver.lt(compilerVersion, '0.4.5')) {
-        item.payable = true;
-      }
-    } else if (item.type === 'fallback') {
-      hasFallback = true;
-    }
-
-    if (item.type !== 'event') {
-      // add 'payable' to everything
-      if (semver.lt(compilerVersion, '0.4.0')) {
-        item.payable = true;
-      }
-
-      // add stateMutability field
-      if (semver.lt(compilerVersion, '0.4.16')) {
-        if (item.payable) {
-          item.stateMutability = 'payable';
-        } else if (item.constant) {
-          item.stateMutability = 'view';
-        } else {
-          item.stateMutability = 'nonpayable';
-        }
-      }
-    }
-  }
-
-  // 0.1.2 from Aug 2015 had it. The code has it since May 2015 (e7931ade)
-  if (!hasConstructor && semver.lt(compilerVersion, '0.1.2')) {
-    abi.push({
-      type: 'constructor',
-      payable: true,
-      stateMutability: 'payable',
-      inputs: []
-    });
-  }
-
-  if (!hasFallback && semver.lt(compilerVersion, '0.4.0')) {
-    abi.push({
-      type: 'fallback',
-      payable: true,
-      stateMutability: 'payable'
-    });
-  }
-
-  return abi;
-}
-
-module.exports = {
-  update: update
-};
-
-},{}],176:[function(require,module,exports){
-module.exports = {
-  linker: require('./linker'),
-  wrapper: require('./wrapper'),
-  abi: require('./abi'),
-  translate: require('./translate')
-};
-},{"./abi":175,"./linker":177,"./translate":178,"./wrapper":182}],177:[function(require,module,exports){
-module.exports = { linkBytecode, findLinkReferences };
-
-function linkBytecode (bytecode, libraries) {
-  // NOTE: for backwards compatibility support old compiler which didn't use file names
-  var librariesComplete = {};
-  for (var libraryName in libraries) {
-    if (typeof libraries[libraryName] === 'object') {
-      for (var lib in libraries[libraryName]) { // API compatible with the standard JSON i/o
-        librariesComplete[lib] = libraries[libraryName][lib];
-        librariesComplete[libraryName + ':' + lib] = libraries[libraryName][lib];
-      }
-    } else {
-      // backwards compatible API for early solc-js verisons
-      var parsed = libraryName.match(/^([^:]*):?(.*)$/);
-      if (parsed) librariesComplete[parsed[2]] = libraries[libraryName];
-      librariesComplete[libraryName] = libraries[libraryName];
-    }
-  }
-  for (libraryName in librariesComplete) {
-    var internalName = libraryName.slice(0, 36);
-    // truncate to 37 characters
-    // prefix and suffix with __
-    var libLabel = '__' + internalName + Array(37 - internalName.length).join('_') + '__';
-    var hexAddress = librariesComplete[libraryName];
-    if (hexAddress.slice(0, 2) !== '0x' || hexAddress.length > 42) {
-      throw new Error('Invalid address specified for ' + libraryName);
-    }
-    hexAddress = hexAddress.slice(2);
-    // remove 0x prefix
-    hexAddress = Array(40 - hexAddress.length + 1).join('0') + hexAddress;
-    while (bytecode.indexOf(libLabel) >= 0) {
-      bytecode = bytecode.replace(libLabel, hexAddress);
-    }
-  }
-  return bytecode;
-}
-
-function findLinkReferences (bytecode) {
-  // find 40 bytes in the pattern of __...<36 digits>...__
-  // e.g. __Lib.sol:L_____________________________
-  var linkReferences = {};
-  var offset = 0;
-  while (true) {
-    var found = bytecode.match(/__(.{36})__/);
-    if (!found) {
-      break;
-    }
-
-    var start = found.index;
-    // trim trailing underscores
-    // NOTE: this has no way of knowing if the trailing underscore was part of the name
-    var libraryName = found[1].replace(/_+$/gm, '');
-    if (!linkReferences[libraryName]) linkReferences[libraryName] = [];
-
-    linkReferences[libraryName].push({
-      // offsets are in bytes in binary representation (and not hex)
-      start: (offset + start) / 2,
-      length: 20
-    });
-
-    offset += start + 20;
-    bytecode = bytecode.slice(start + 20);
-  }
-  return linkReferences;
-}
-
-},{}],178:[function(require,module,exports){
-module.exports = {
-  standardTranslateJsonCompilerOutput: require('./standardTranslateJsonCompilerOutput'),
-  prettyPrintLegacyAssemblyJSON: require('./prettyPrintLegacyAssemblyJSON'),
-  versionToSemver: require('./versionToSemver')
-};
-},{"./prettyPrintLegacyAssemblyJSON":179,"./standardTranslateJsonCompilerOutput":180,"./versionToSemver":181}],179:[function(require,module,exports){
-module.exports = prettyPrintLegacyAssemblyJSON;
-
-function prettyPrintLegacyAssemblyJSON(assembly, source) {
-  return formatAssemblyText(assembly, '', source);
-}
-
-function formatAssemblyText(asm, prefix, source) {
-  if (typeof asm === typeof '' || asm === null || asm === undefined) {
-    return prefix + (asm || '') + '\n';
-  }
-  var text = prefix + '.code\n';
-  asm['.code'].forEach(function (item, i) {
-    var v = item.value === undefined ? '' : item.value;
-    var src = '';
-    if (source !== undefined && item.begin !== undefined && item.end !== undefined) {
-      src = escapeString(source.slice(item.begin, item.end));
-    }
-    if (src.length > 30) {
-      src = src.slice(0, 30) + '...';
-    }
-    if (item.name !== 'tag') {
-      text += '  ';
-    }
-    text += prefix + item.name + ' ' + v + '\t\t\t' + src + '\n';
-  });
-  text += prefix + '.data\n';
-  var asmData = asm['.data'] || [];
-  for (var i in asmData) {
-    var item = asmData[i];
-    text += '  ' + prefix + '' + i + ':\n';
-    text += formatAssemblyText(item, prefix + '    ', source);
-  }
-  return text;
-}
-
-function escapeString(text) {
-  return text
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t');
-}
-},{}],180:[function(require,module,exports){
-// https://solidity.readthedocs.io/en/v0.5.1/using-the-compiler.html?highlight=legacyAST#output-description
-
-module.exports = standardTranslateJsonCompilerOutput;
-
-// function writeOutput(data, version) {
-//   const fileName = version.split('-')[0];
-//   const jsonfile = require('jsonfile');
-//   jsonfile.writeFile(`./test/wrapper/translate/output/${fileName}.json`, data, function (err) {
-//     if (err) console.error(err);
-//   });
-// }
-
-function standardTranslateJsonCompilerOutput({ version, url }, data) {
-  if (isMatchVersion(version, '0.1')) throw Error('don\'t support v0.1.x version.');
-
-  try {
-    // writeOutput(data, version);
-    let output = Object.keys(data.contracts).map(name => {
-      let contract = data.contracts[name];
-      var {
-        functionHashes,
-      } = contract;
-
-      const metadata = getMetadata(contract, name, version);
-
-      var compilation = {
-        name: getName(contract, name, version),
-        abi: getABI(contract, name, version),
-        sources: getSource(data, metadata, version, name),
-        compiler: getCompile(metadata, version, url, name),
-        assembly: {
-          assembly: getAssembly(contract, name, version),
-          opcodes: getOpcodes(contract)
-        },
-        binary: {
-          bytecodes: {
-            bytecode: getBytecode(contract, name, version),
-            runtimeBytecode: getRuntimeBytecode(contract, name, version)
-          },
-          sourcemap: {
-            srcmap: getSrcmap(contract, version),
-            srcmapRuntime: getSrcmapRuntime(contract, version)
-          },
-        },
-        metadata: {
-          ast: getAST(name, data, version),
-          devdoc: getDevDoc(contract, metadata, version),
-          userdoc: getUserDoc(contract, metadata, version),
-          functionHashes,
-          gasEstimates: getGasEstimates(contract, name, version),
-          analysis: (() => {
-            return getAnalysis(data.errors);
-          })()
-        }
-      };
-      // console.log('=== stardard output ====');
-      // console.log(compilation);
-      return compilation;
-    });
-    return output;
-  } catch (error) {
-    console.error(error);
-    console.error('[ERROR] parse standard output error');
-    throw error;
-  }
-}
-
-function isNewVersion(version) {
-  return isMatchVersion(version, '0.5', '0.4');
-}
-
-function getName(contract, name, version) {
-  return isNewVersion(version) ? Object.keys(contract)[0] : name;
-}
-
-function getAnalysis(errors) {
-  let result = { warnings: [], others: [] };
-  for (let error in errors) {
-    let errItem = errors[error];
-    let type;
-    if (errItem.type) {
-      type = errItem.type.trim().toLowerCase();
-    } else {
-      type = errItem.split(':')[3];
-    }
-    if (type == 'warning') type = 'warnings';
-    (result[type] || (result[type] = [])).push(errItem);
-  }
-  return result;
-}
-
-function getSrcmap(contract, version) {
-  try {
-    if (isMatchVersion(version, '0.5')) {
-      let name = Object.keys(contract)[0];
-      return contract[name].evm.bytecode.sourceMap;
-    } else if (isMatchVersion(version, '0.4', '0.3')) {
-      return contract.srcmap;
-    } else {
-      return;
-    }
-  } catch (error) {
-    console.error('[ERROR] parse srcmap fail');
-    throw error;
-  }
-}
-
-function getBytecode(contract, name, version) {
-  if (isNewVersion(version)) {
-    let name2 = Object.keys(contract)[0];
-    return contract[name2].evm.bytecode.object;
-  } else {
-    return contract.bytecode;
-  }
-}
-
-function getRuntimeBytecode(contract, name, version) {
-  if (isNewVersion(version)) {
-    let name2 = Object.keys(contract)[0];
-    return contract[name2].evm.deployedBytecode.object;
-  } else {
-    return contract.runtimeBytecode;
-  }
-}
-
-function getSrcmapRuntime(contract, version) {
-  try {
-    if (isMatchVersion(version, '0.5')) {
-      let name = Object.keys(contract)[0];
-      return contract[name].evm.bytecode.sourceMap;
-    } else if (isMatchVersion(version, '0.4')) {
-      return contract.srcmapRuntime;
-    } else if (isMatchVersion(version, '0.3')) {
-      return contract['srcmap-runtime'];
-    } else {
-      return;
-    }
-  } catch (error) {
-    console.error('[ERROR] parse bytecode fail');
-    throw error;
-  }
-}
-
-function getOpcodes(contract) {
-  if (contract.opcodes) {
-    return contract.opcodes;
-  } else {
-    let name = Object.keys(contract)[0];
-    return contract[name].evm.bytecode.opcodes;
-  }
-}
-
-function getAssembly(contract, name, version) {
-  if (isNewVersion(version)) {
-    let name = Object.keys(contract)[0];
-    return contract[name].evm.legacyAssembly;
-  } else {
-    return contract.assembly;
-  }
-}
-
-function getGasEstimates(contract, name, version) {
-  if (isNewVersion(version)) {
-    let name = Object.keys(contract)[0];
-    return contract[name].evm.gasEstimates;
-  } else {
-    return contract.gasEstimates;
-  }
-}
-
-function getAST(name, data, version) {
-  return isNewVersion(version) ? data.sources[name].ast : data.sources[''].AST;
-}
-
-function getUserDoc(contract, metadata, version) {
-  try {
-    if (isMatchVersion(version, '0.5')) {
-      let name = Object.keys(contract)[0];
-      return contract[name].userdoc;
-    } else if (isMatchVersion(version, '0.4')) {
-      return metadata.output.userdoc;
-    } else {
-      return;
-    }
-  } catch (error) {
-    console.error('[ERROR] parse userdoc fail');
-    throw error;
-  }
-}
-
-function getDevDoc(contract, metadata, version) {
-  if (isMatchVersion(version, '0.5')) {
-    let name = Object.keys(contract)[0];
-    return contract[name].devdoc;
-  } else if (isMatchVersion(version, '0.4')) {
-    return metadata.output.devdoc;
-  } else {
-    return;
-  }
-}
-
-function getABI(contract, name, version) {
-  if (isNewVersion(version)) {
-    let name2 = Object.keys(contract)[0];
-    return contract[name2].abi;
-  } else {
-    return JSON.parse(contract.interface);
-  }
-}
-
-function getMetadata(contract, name, version) {
-  if (isNewVersion(version)) {
-    let name2 = Object.keys(contract)[0];
-    // let { metadata, abi, evm } 
-    let { metadata } = contract[name2];
-    // console.log('=== metadata ====');
-    // console.log(metadata);
-    if (metadata) metadata = JSON.parse(metadata);
-    return metadata;
-  } else {
-    return;
-  }
-}
-
-function getCompile(metadata, version, url, name) {
-  let language, evmVersion, optimizer, runs;
-  if (isNewVersion(version)) {
-    if (metadata) {
-      language = metadata.language.toLowerCase();
-      evmVersion = metadata.settings.evmVersion;
-      optimizer = metadata.settings.optimizer.enabled;
-      runs = metadata.settings.optimizer.runs;
-    }
-  } else {
-    language = 'solidity';
-    // evmVersion = metadata.settings.evmVersion;
-    optimizer = true;
-    runs = 200;
-  }
-
-  return {
-    language,
-    version: version,
-    url,
-    evmVersion,
-    optimizer,
-    runs,
-  };
-}
-
-function getSource(data, metadata, version, name) {
-  let sources = {};
-
-  if (isMatchVersion(version, '0.5', '0.4')) {
-    if (!metadata) return sources;
-    sources = {
-      sourcecode: {
-        keccak256: getKeccak256(metadata, version, name),
-        urls: [] // DONT HAVE
-      },
-      compilationTarget: (metadata.settings.compilationTarget)[name],
-      remappings: metadata.settings.remappings,
-      libraries: metadata.settings.libraries,
-      sourcelist: undefined
-    };
-    // } else if (isMatchVersion(version, '0.4')) {
-    //   sources = {
-    //     sourcecode: metadata.sources[''],
-    //     compilationTarget: metadata.settings.compilationTarget[''],
-    //     remappings: metadata.settings.remappings,
-    //     libraries: metadata.settings.libraries,
-    //     sourcelist: data.sourceList
-    // };
-  } else if (isMatchVersion(version, '0.3')) {
-    sources = {
-      sourcecode: '',
-      compilationTarget: '',
-      remappings: '',
-      libraries: '',
-      sourcelist: data.sourceList
-    };
-  } else {
-    return;
-  }
-  return sources;
-}
-
-function getKeccak256(metadata, version, name) {
-  if (isMatchVersion(version, '0.5')) {
-    return metadata.sources[name].keccak256;
-  } else {
-    return metadata.sources[''];
-  }
-}
-
-function isMatchVersion(version, ...match) {
-  for (let m of match) {
-    if (version.indexOf(`v${m}.`) != -1) return true;
-  }
-  return false;
-}
-},{}],181:[function(require,module,exports){
-module.exports = versionToSemver;
-
-/// Translate old style version numbers to semver.
-/// Old style: 0.3.6-3fc68da5/Release-Emscripten/clang
-///            0.3.5-371690f0/Release-Emscripten/clang/Interpreter
-///            0.2.0-e7098958/.-Emscripten/clang/int linked to libethereum-1.1.1-bbb80ab0/.-Emscripten/clang/int
-///            0.1.3-0/.-/clang/int linked to libethereum-0.9.92-0/.-/clang/int
-///            0.1.2-5c3bfd4b*/.-/clang/int
-///            0.1.1-6ff4cd6b/RelWithDebInfo-Emscripten/clang/int
-/// New style: 0.4.5+commit.b318366e.Emscripten.clang
-function versionToSemver(version) {
-  // FIXME: parse more detail, but this is a good start
-  var parsed = version.match(/^([0-9]+\.[0-9]+\.[0-9]+)-([0-9a-f]{8})[/*].*$/);
-  if (parsed) {
-    return parsed[1] + '+commit.' + parsed[2];
-  }
-  if (version.indexOf('0.1.3-0') !== -1) {
-    return '0.1.3';
-  }
-  // assume it is already semver compatible
-  return version;
-}
-},{}],182:[function(require,module,exports){
-const linker = require('./linker.js');
-const translate = require('./translate');
-let soljson;
-const assert = (bool, msg) => { if (!bool) throw new Error(msg); };
-
-module.exports = wrapper;
-
-function wrapCallback(callback) {
-  assert(typeof callback === 'function', 'Invalid callback specified.');
-  return function (path, contents, error) {
-    var result = callback(soljson.Pointer_stringify(path));
-    if (typeof result.contents === 'string') copyString(result.contents, contents);
-    if (typeof result.error === 'string') copyString(result.error, error);
-  };
-}
-
-function copyString(str, ptr) {
-  var length = soljson.lengthBytesUTF8(str);
-  var buffer = soljson._malloc(length + 1);
-  soljson.stringToUTF8(str, buffer, length + 1);
-  soljson.setValue(ptr, buffer, '*');
-}
-
-function runWithReadCallback(readCallback, compile, args) {
-  if (readCallback === undefined) {
-    readCallback = function (path) {
-      return {
-        error: 'File import callback not supported'
-      };
-    };
-  }
-
-  // This is to support multiple versions of Emscripten.
-  var addFunction = soljson.addFunction || soljson.Runtime.addFunction;
-  var removeFunction = soljson.removeFunction || soljson.Runtime.removeFunction;
-
-  var cb = addFunction(wrapCallback(readCallback));
-  var output;
-  try {
-    args.push(cb);
-    // console.log('=== cb ====');
-    // console.log(cb);
-    output = compile.apply(undefined, args);
-  } catch (e) {
-    removeFunction(cb);
-    throw e;
-  }
-  removeFunction(cb);
-  return output;
-}
-
-function getCompileJSON() {
-  if ('_compileJSON' in soljson) {
-    return soljson.cwrap('compileJSON', 'string', ['string', 'number']);
-  }
-}
-
-// function getCompileJSONMulti() {
-//   if ('_compileJSONMulti' in soljson) {
-//     return soljson.cwrap('compileJSONMulti', 'string', ['string', 'number']);
-//   }
-// }
-
-// function getCompileJSONCallback() {
-//   if ('_compileJSONCallback' in soljson) {
-//     var compileInternal = soljson.cwrap('compileJSONCallback', 'string', ['string', 'number', 'number']);
-//     var compileJSONCallback = function (input, optimize, readCallback) {
-//       return runWithReadCallback(readCallback, compileInternal, [input, optimize]);
-//     };
-//     return compileJSONCallback;
-//   }
-// }
-
-function getCompileStandard() {
-  var compileStandard;
-  if ('_compileStandard' in soljson) {
-    var compileStandardInternal = soljson.cwrap('compileStandard', 'string', ['string', 'number']);
-    compileStandard = function (input, readCallback) {
-      return runWithReadCallback(readCallback, compileStandardInternal, [input]);
-    };
-  }
-  if ('_solidity_compile' in soljson) {
-    var solidityCompile = soljson.cwrap('solidity_compile', 'string', ['string', 'number']);
-    compileStandard = function (input, readCallback) {
-      return runWithReadCallback(readCallback, solidityCompile, [input]);
-    };
-  }
-  return compileStandard;
-}
-
-function getVersion() {
-  let version;
-  if ('_solidity_version' in soljson) {
-    version = soljson.cwrap('solidity_version', 'string', []);
-  } else {
-    version = soljson.cwrap('version', 'string', []);
-  }
-  return version;
-}
-
-function getLicense() {
-  let license;
-  if ('_solidity_license' in soljson) {
-    license = soljson.cwrap('solidity_license', 'string', []);
-  } else if ('_license' in soljson) {
-    license = soljson.cwrap('license', 'string', []);
-  } else {
-    // pre 0.4.14
-    license = function () {};
-  }
-  return license;
-}
-
-function getWrapperFormat(sourcecode) {
-  let input = {
-    language: 'Solidity',
-    settings: {
-      optimizer: {
-        enabled: true
-      },
-      metadata: {
-        useLiteralContent: true
-      },
-      outputSelection: { '*': { '*': ['*'], '': ['*'] } }
-    },
-    sources: {
-      'MyContract': {
-        content: sourcecode
-      }
-    }
-  };
-  return input;
-}
-
-function wrapper(_soljson) {
-  soljson = _soljson;
-  var compileJSON = getCompileJSON();
-  // var compileJSONMulti = getCompileJSONMulti();
-  // var compileJSONCallback = getCompileJSONCallback();
-  var compileStandard = getCompileStandard();
-  let version = getVersion();
-
-  function compile(input, optimise, readCallback) {
-    let result;
-    if (compileStandard) {
-      result = compileStandardWrapper(input, readCallback);
-    } else {
-      result = compileJSON(input, optimise);
-    }
-    return JSON.parse(result);
-  }
-
-  function compileStandardWrapper (input, readCallback) {
-    let newInput = JSON.stringify(getWrapperFormat(input));
-    return compileStandard(newInput, readCallback);
-  }
-
-  // function versionToSemver() { return translate.versionToSemver(version()); }
-  let license = getLicense();
-
-  return {
-    version: version,
-    // semver: versionToSemver,
-    license: license,
-    compile: compile,
-    linkBytecode: linker.linkBytecode
-  };
-}
-},{"./linker.js":177,"./translate":178}],183:[function(require,module,exports){
-const solcVersion = require('solc-version');
-const getCompile = require('./getCompile');
-const getVersion = require('./getVersion');
-const getCompilersource = require('./getCompilersource');
-const loadModule = require('./loadModule');
-const pretest = require('./pretest');
-const solcWrapper = require('./solc-wrapper/wrapper');
-
-function solcjs(_version) {
-  return new Promise(async (resolve, reject) => {
-    let newCompile;
-    let version;
-
-    try {
-      version = await getVersion(_version);
-      
-      console.time('[fetch compiler]');
-      let url = await solcVersion.version2url(version);
-      let compilersource = await getCompilersource(url);
-      console.timeEnd('[fetch compiler]');
-
-      console.time('[load compiler]');
-      const solc = loadModule(compilersource);
-      console.timeEnd('[load compiler]');
-
-      console.time('[wrap compiler]');
-      let _compiler = solcWrapper(solc);
-      _compiler.opts = { version, url };
-
-      newCompile = getCompile(_compiler);
-      newCompile.version = { name: version, url };
-      console.timeEnd('[wrap compiler]');
-
-      try {
-        await pretest(newCompile);
-        resolve(newCompile);
-      } catch (err) { throw new Error('pretest failed'); }
-    } catch (error) {
-      console.error(error);
-      reject(error);
-    }
-  });
-}
-
-module.exports = solcjs;
-},{"./getCompile":166,"./getCompilersource":168,"./getVersion":171,"./loadModule":173,"./pretest":174,"./solc-wrapper/wrapper":182,"solc-version":156}],184:[function(require,module,exports){
-const translateJsonCompilerOutput = require('./solc-wrapper/translate/standardTranslateJsonCompilerOutput');
-const getCompileOutput = require('./getCompileOutput');
-const getStandardError = require('./getStandardError');
-
-module.exports = wrapperCompile;
-
-function wrapperCompile(oldSolc, sourcecode, readCallback) {
-  return new Promise(function (resolve, reject) {
-    let output = getCompileOutput(oldSolc, sourcecode, readCallback);
-    if (isCompilerFail(output)) {
-      const standardError = getStandardError(output.errors);
-      return reject(standardError);
-    } else {
-      const translateOutput = translateJsonCompilerOutput(oldSolc.opts, output);
-      resolve(translateOutput);
-    }
-  });
-
-  function isCompilerFail(output) {
-    return !output.contracts || Object.keys(output.contracts).length == 0;
-  }
-}
-},{"./getCompileOutput":167,"./getStandardError":170,"./solc-wrapper/translate/standardTranslateJsonCompilerOutput":180}],185:[function(require,module,exports){
+},{}],136:[function(require,module,exports){
 var isHexPrefixed = require('is-hex-prefixed');
 
 /**
@@ -19456,7 +19213,7 @@ module.exports = function stripHexPrefix(str) {
   return isHexPrefixed(str) ? str.slice(2) : str;
 }
 
-},{"is-hex-prefixed":124}],186:[function(require,module,exports){
+},{"is-hex-prefixed":63}],137:[function(require,module,exports){
 (function (global){
 //     Underscore.js 1.9.1
 //     http://underscorejs.org
@@ -21152,7 +20909,7 @@ module.exports = function stripHexPrefix(str) {
 }());
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],187:[function(require,module,exports){
+},{}],138:[function(require,module,exports){
 /*! https://mths.be/utf8js v3.0.0 by @mathias */
 ;(function(root) {
 
@@ -21356,7 +21113,7 @@ module.exports = function stripHexPrefix(str) {
 
 }(typeof exports === 'undefined' ? this.utf8 = {} : exports));
 
-},{}],188:[function(require,module,exports){
+},{}],139:[function(require,module,exports){
 /*
  This file is part of web3.js.
 
@@ -21722,7 +21479,7 @@ module.exports = {
 };
 
 
-},{"./soliditySha3.js":189,"./utils.js":190,"ethjs-unit":50,"randomhex":130,"underscore":186}],189:[function(require,module,exports){
+},{"./soliditySha3.js":140,"./utils.js":141,"ethjs-unit":50,"randomhex":69,"underscore":137}],140:[function(require,module,exports){
 /*
  This file is part of web3.js.
 
@@ -21969,7 +21726,7 @@ var soliditySha3 = function () {
 
 module.exports = soliditySha3;
 
-},{"./utils.js":190,"bn.js":26,"underscore":186}],190:[function(require,module,exports){
+},{"./utils.js":141,"bn.js":26,"underscore":137}],141:[function(require,module,exports){
 /*
  This file is part of web3.js.
 
@@ -22442,7 +22199,7 @@ module.exports = {
     sha3: sha3
 };
 
-},{"bn.js":26,"eth-lib/lib/hash":48,"number-to-bn":127,"underscore":186,"utf8":187}],191:[function(require,module,exports){
+},{"bn.js":26,"eth-lib/lib/hash":48,"number-to-bn":66,"underscore":137,"utf8":138}],142:[function(require,module,exports){
 const ethers = require('ethers')
 const bigNumber = require('bignumber.js')
 
@@ -22474,7 +22231,7 @@ function getAmount (currency, amount) {
   if (currency === 'wei')     return amount
 }
 
-},{"bignumber.js":25,"ethers":49}],192:[function(require,module,exports){
+},{"bignumber.js":25,"ethers":49}],143:[function(require,module,exports){
 const bigNumber = require('bignumber.js')
 const ethers = require('ethers')
 const convertToEther = require('convertToEther')
@@ -22591,7 +22348,7 @@ function getArgument(el, val) {
   return argument
 }
 
-},{"bignumber.js":25,"convertToEther":191,"ethers":49}],193:[function(require,module,exports){
+},{"bignumber.js":25,"convertToEther":142,"ethers":49}],144:[function(require,module,exports){
 module.exports = getDate
 
 function getDate () {
@@ -22615,7 +22372,7 @@ function getDate () {
 
 }
 
-},{}],194:[function(require,module,exports){
+},{}],145:[function(require,module,exports){
 const ethers = require('ethers')
 
 module.exports = getReturnData
@@ -22650,7 +22407,7 @@ function getTypes(types, i) {
   return types
 }
 
-},{"ethers":49}],195:[function(require,module,exports){
+},{"ethers":49}],146:[function(require,module,exports){
 module.exports = word => glossary[word]
 
 var glossary = {
@@ -22661,7 +22418,7 @@ var glossary = {
   undefined: `Type of this function is not defined.`
 }
 
-},{}],196:[function(require,module,exports){
+},{}],147:[function(require,module,exports){
 module.exports = patchResult
 
 function patchResult (result) {
@@ -22688,7 +22445,7 @@ function patchResult (result) {
   }
 }
 
-},{}],197:[function(require,module,exports){
+},{}],148:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require("csjs-inject")
 
@@ -22805,7 +22562,7 @@ function loadingAnimation (colors, text) {
   `
 }
 
-},{"bel":24,"csjs-inject":31}],198:[function(require,module,exports){
+},{"bel":24,"csjs-inject":31}],149:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require('csjs-inject')
 
@@ -22899,7 +22656,7 @@ const classes = csjs`
 .date {
   margin: 0;
 }`
-},{"bel":24,"copy-text-to-clipboard":28,"csjs-inject":31,"getDate":193,"moreInfo":200}],199:[function(require,module,exports){
+},{"bel":24,"copy-text-to-clipboard":28,"csjs-inject":31,"getDate":144,"moreInfo":151}],150:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require('csjs-inject')
 const getDate = require('getDate')
@@ -22994,7 +22751,7 @@ const classes = csjs`
   background-color: rgba(255,255,255, .15);
 }
 `
-},{"bel":24,"csjs-inject":31,"getDate":193,"getReturnData":194,"moreInfo":200}],200:[function(require,module,exports){
+},{"bel":24,"csjs-inject":31,"getDate":144,"getReturnData":145,"moreInfo":151}],151:[function(require,module,exports){
 const bel = require('bel')
 const csjs = require('csjs-inject')
 
@@ -23024,7 +22781,7 @@ const classes = csjs`
   color: white;
   opacity: 0.6;
 }`
-},{"bel":24,"csjs-inject":31}],201:[function(require,module,exports){
+},{"bel":24,"csjs-inject":31}],152:[function(require,module,exports){
 module.exports = shortenHexData
 
 function shortenHexData (data) {
@@ -23034,7 +22791,7 @@ function shortenHexData (data) {
   return data.slice(0, 10) + '...' + data.slice(len - 10, len)
 }
 
-},{}],202:[function(require,module,exports){
+},{}],153:[function(require,module,exports){
 const ethers = require('ethers')
 
 module.exports = getProvider
@@ -23053,7 +22810,7 @@ async function getProvider () {
   return provider
 }
 
-},{"ethers":49}],203:[function(require,module,exports){
+},{"ethers":49}],154:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require("csjs-inject")
 
@@ -24331,4 +24088,4 @@ const variables = { // defaults
   ethIconColor: '',
   ethIconFontSize: '',
 }
-},{"../demo/node_modules/theme":19,"bel":24,"copy-text-to-clipboard":28,"csjs-inject":31,"ethers":49,"getArgs":192,"glossary":195,"helper/patch-result":196,"input-address":64,"input-array":75,"input-boolean":86,"input-byte":99,"input-integer":110,"input-payable":111,"input-string":122,"loadingAnimation":197,"makeDeployReceipt":198,"makeReturn":199,"shortenHexData":201,"wallet":202}]},{},[1]);
+},{"../demo/node_modules/theme":19,"bel":24,"copy-text-to-clipboard":28,"csjs-inject":31,"ethers":49,"getArgs":143,"glossary":146,"helper/patch-result":147,"input-address":54,"input-array":56,"input-boolean":57,"input-byte":58,"input-integer":59,"input-payable":60,"input-string":61,"loadingAnimation":148,"makeDeployReceipt":149,"makeReturn":150,"shortenHexData":152,"wallet":153}]},{},[1]);
