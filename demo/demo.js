@@ -3,14 +3,17 @@ const csjs = require('csjs-inject')
 const solcjs = require('solc-js')
 
 const selectTheme = require('theme')
-const themeSwitcher = require('theme-switcher')
+const makeThemeSwitch = require('theme-switcher')
 const getversion = require('get-compiler-version')
 const contracts = require('contracts')
 const smartcontractui = require('../')
 
 try {
-  setTimeout(demo, 0) // start demo in the next tick so all code can initialize first
+  setTimeout(() => {
+    demo(localStorage['theme'] || void 0, localStorage['contract'] || void 0)
+  }, 0) // start demo in the next tick so all code can initialize first
 } catch (error) {
+  console.error(error)
   const data = JSON.stringify(error, 0, 2)
   document.body.innerHTML = `<pre style="color: red;">${data}</pre>`
 }
@@ -20,65 +23,75 @@ var counter = 1
 
 function demo (default_theme = 'darkTheme', default_contract = 'SimpleStorage.sol') {
   const name = `${id}/${counter++}`
-
   const vars = selectTheme(default_theme)
   const css = classes
+  const themes = selectTheme.names
   const list = contracts()
-
   const send = {}
-  
-  const opts = { theme: selectTheme, init: default_theme }
-  const switcher = themeSwitcher(opts, notify => {
+
+  var _scui
+  const el = bel`<div class=${css.demo}>
+    <header class=${css.header}>
+      <h1> demo smartcontract-ui </h1>
+      <div class=${css.menu}>
+        ${makeSelector()}
+        ${makeThemeSwitch({ data: { themes } }, protocolThemeSwitch)}
+      </div>
+    </header>
+    ${_scui = bel`<div class=${css.scui}></div>`}
+  </div>`
+  function protocolThemeSwitch (notify) {
     send.themeswitcher = notify
     return msg => {
       console.log(`[${name}] receives:`, msg)
       const { type, body } = msg
-      if (type == 'theme') return send.smartcontractui({ type: 'theme', body })
+      if (type == 'theme') {
+        const name = localStorage['theme'] = body
+        return send.smartcontractui({ type: 'theme', body: selectTheme(name) })
+      }
     }
-  })
-
-  const scui = bel`<div class=${css.scui}></div>`
-
-  const selector = bel`<select class=${css.select}>
-    ${list.map(item => bel`<option value=${item} ${(item === default_contract) ? 'selected': ''}>
-      ${item}
-    </option>`)}
-  </select>`
-  selector.onchange = event => load(event.target.value)
-
-  const el = bel`<div class=${css.demo}>
-    <header class=${css.header}>
-      <h1>demo smartcontract-ui</h1>
-      <div class=${css.menu}>${selector}${switcher}</div>
-    </header>
-    ${scui}
-  </div>`
+  }
+  function protocolSmartcontractUI (notify) {
+    send.smartcontractui = notify
+    return msg => {
+      console.log(`[${name}] receives:`, msg)
+      // @NOTE: maybe accept and do something with messages from smartcontract-ui
+    }
+  }
 
   updateTheme(vars)
   load(default_contract)
   document.body.appendChild(el)
 
+  function makeSelector () {
+    const isDefault = item => (item === default_contract) ? 'selected': ''
+    return bel`
+    <select class=${css.select} onchange=${event => load(event.target.value)}>
+      ${list.map(item => bel`<option value=${item} ${isDefault(item)}>
+        ${item}
+      </option>`)}
+    </select>`
+  }
   async function load (contract) {
+    localStorage['contract'] = contract
     const loading = bel`<div style="display: grid; justify-content: center; align-content: center; height: 100%;">...loading...</div>`
-    scui.innerHTML = ''
-    scui.appendChild(loading)
+    _scui.innerHTML = ''
+    _scui.appendChild(loading)
     try {
       const sourcecode = contracts(contract)
       const version = await getversion(sourcecode)
       const compiler = await solcjs(version)
       const data = await compiler(sourcecode)
-      const form = smartcontractui({ data, theme: { variables: vars } }, notify => {
-        send.smartcontractui = notify
-        return msg => {
-          console.log(`[${name}] receives:`, msg)
-        }
-      })
-      scui.innerHTML = ''
-      scui.appendChild(form)
+      const opts = { data, theme: { variables: vars } }
+      const form = smartcontractui(opts, protocolSmartcontractUI)
+      _scui.innerHTML = ''
+      _scui.appendChild(form)
     } catch (error) {
-      scui.innerHTML = ''
-      const data = JSON.stringify(error.stack.split('\n'), 0, 2)
-      scui.appendChild(bel`<pre style="color:red">${data}</pre>`)
+      console.error(error)
+      _scui.innerHTML = ''
+      const stack = error.stack || JSON.stringify(error, 0, 2)
+      const data = JSON.stringify(stack.split('\n'), 0, 2)
+      _scui.appendChild(bel`<pre style="color:red">${data}</pre>`)
     }
   }
   function updateTheme (vars) {

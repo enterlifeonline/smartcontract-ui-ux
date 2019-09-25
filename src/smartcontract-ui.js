@@ -12,10 +12,7 @@ const makeDeployReceipt = require('makeDeployReceipt')
 const getArgs = require('getArgs')
 const makeReturn = require('makeReturn')
 const shortenHexData = require('shortenHexData')
-
-
 const copy = require('copy-text-to-clipboard')
-const theme = require('../demo/node_modules/theme')
 
 const id = 'smartcontract-ui'
 var counter = 1
@@ -24,13 +21,14 @@ module.exports = smartcontractui
 
 function smartcontractui ({ data, theme = {} }, protocol) {
   const name = `${id}/${counter++}`
-  const css = theme.classes || classes
-  const vars = theme.variables || variables
+  const css = Object.assign({}, classes, theme.classes)
+  const vars = Object.assign({}, variables, theme.variables)
 
   const notify = protocol(msg => {
-    const { type, body } = msg
     console.log(`[${name}] receives:`, msg)
+    const { type, body } = msg
     if (type === 'theme') return updateTheme(body)
+    // @TODO: pass on theme to children recursively :-)
   })
 
   const opts = patchResult(data) // compilation result metadata
@@ -38,6 +36,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
   const colors = vars
   var provider
   var contract
+  const opts1 = JSON.stringify(opts, 0, 2)
 
   if (!opts || !opts.metadata) return notify({ type: 'error', body: opts })
   if (Array.isArray(opts.metadata)) return notify({ type: 'error', body: opts })
@@ -55,7 +54,8 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       return msg => {
         const { type, body } = msg
         console.log(`[${name}] receives:`, msg)
-        if (type === 'publish') deployContract()
+        if (type === 'publish') deployContract(body)
+        throw new Error('@TODO: make work constructor protocol')
       }
     }),
     functions: solcMetadata.output.abi.map(x => {
@@ -63,7 +63,8 @@ function smartcontractui ({ data, theme = {} }, protocol) {
         return msg => {
           const { type, body } = msg
           console.log(`[${name}] receives:`, msg)
-          if (type === 'send') deployContract()
+          if (type === 'send') deployContract(body)
+          throw new Error('@TODO: make work function protocol')
         }
       })
     })
@@ -73,11 +74,13 @@ function smartcontractui ({ data, theme = {} }, protocol) {
   const ctor = bel`<div class="${css.ctor}">${metadata.constructorInput}</div>`
   const topContainer = bel`<section class=${css.topContainer}>${ctor}</section>`
 
-  async function deployContract () { // Create and deploy contract using WEB3
+  async function deployContract (formState) { // Create and deploy contract using WEB3
     
     // @TODO: make constructor form module
     // @TODO: make function form module
     // @TODO: make them re-use parameter-form
+
+    // @TODO: pass styles so that inputForms work again with their styling
 
     // console.log('foo')
     // throw new Error('stop')
@@ -88,13 +91,20 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     provider =  await getProvider()
     let signer = await provider.getSigner()
 
-    var el = document.querySelector("[class^='ctor']")
+    var el = ctor
+    const opts2 = JSON.stringify(opts, 0, 2)
+    console.log(opts1)
+    console.log(opts2)
+    console.log(opts1 === opts2)
+    debugger
+
     let factory = await new ethers.ContractFactory(abi, bytecode, signer)
     const loader = bel`<div class=${css.deploying}>${loadingAnimation(colors, 'Publishing to Ethereum network')}</div>`
     el.replaceWith(loader)
     try {
       var allArgs = getArgs(el, 'inputContainer')
       let args = allArgs.args
+      debugger
       var instance
       if (allArgs.overrides) { instance = await factory.deploy(...args, allArgs.overrides) }
       else { instance = await factory.deploy(...args) }
@@ -109,6 +119,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       }))
       activateSendTx(contract)
     } catch (e) {
+      console.error(e)
       loader.replaceWith(ctor)
     }
   }
@@ -948,7 +959,7 @@ input[type="range"]:focus::-ms-fill-upper {
   color: var(--booleanFieldActiveColor);
   background-color: var(--booleanFieldFalsedBackgroundColor);
 }
-.stringField, .byteField, .addressField {
+.stringField, .byteField {
   position: relative;
   display: grid;
   grid-template-columns: 1fr;
@@ -1133,6 +1144,12 @@ function inputStyle() {
     background-color: var(--darkSmoke);
   `
 }
+function hover () {
+  return `
+    cursor: pointer;
+    background-color: rgba(255,255,255, .15)
+  `
+}
 const variables = { // defaults
   darkSmoke: '',
   bodyBackgroundColor: '',
@@ -1172,6 +1189,8 @@ const variables = { // defaults
   inputParamColor: '',
   inputParamFontSize: '',
   inputParamTextAlign: '',
+
+  // address
   inputFieldFontSize: '',
   inputFieldColor: '',
   inputFieldBackgroundColor: '',
@@ -1179,6 +1198,7 @@ const variables = { // defaults
   inputFieldBorderRadius: '',
   inputFieldBorder: '',
   inputFieldPlaceholderColor: '',
+
   integerValueFontSize: '',
   integerValueColor: '',
   integerValueBackgroundColor: '',
