@@ -47,8 +47,10 @@ function demo (default_theme = 'darkTheme', default_contract = 'SimpleStorage.so
   selector.onchange = event => load(event.target.value)
 
   const el = bel`<div class=${css.demo}>
-    <h1> demo smartcontract-ui </h1>
-    <div class=${css.menu}>${selector}${switcher}</div>
+    <header class=${css.header}>
+      <h1>demo smartcontract-ui</h1>
+      <div class=${css.menu}>${selector}${switcher}</div>
+    </header>
     ${scui}
   </div>`
 
@@ -57,7 +59,9 @@ function demo (default_theme = 'darkTheme', default_contract = 'SimpleStorage.so
   document.body.appendChild(el)
 
   async function load (contract) {
-    scui.innerHTML = '...loading...'
+    const loading = bel`<div style="display: grid; justify-content: center; align-content: center; height: 100%;">...loading...</div>`
+    scui.innerHTML = ''
+    scui.appendChild(loading)
     try {
       const sourcecode = contracts(contract)
       const version = await getversion(sourcecode)
@@ -108,23 +112,28 @@ button {
   background: none;
   outline: none;
 }
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 99;
+  width: calc(100% - 20px);
+  padding: 0 10px;
+  border-bottom: 1px solid rgba(255,255,255, .15);
+  background-color: var(--bodyBackgroundColor);
+}
 .menu {
-  margin: 0;
+  display: grid;
+  grid-template: auto / 50% 50%;
+  align-items: center;
 }
 .select {
   width: 20%;
 }
 .scui {
-  border-top: 1px dashed white;
-  flex-grow: 1;
-  margin: 5px;
-  align-items: top;
-  justify-content: center;
-  display: flex;
+  margin-top: 72px;
+  height: calc(100vh - 72px)
 }
 .demo {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
   box-sizing: border-box;
 }`

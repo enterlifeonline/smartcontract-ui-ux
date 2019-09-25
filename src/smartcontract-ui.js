@@ -41,7 +41,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
   })
 
   const opts = patchResult(data) // compilation result metadata
-
+  console.log(opts)
   const colors = vars
   var provider
   var contract
@@ -61,6 +61,9 @@ function smartcontractui ({ data, theme = {} }, protocol) {
 
   const topContainer = bel`<section class=${css.topContainer}></section>`
   const ctor = bel`<div class="${css.ctor}">
+    <div class=${css.publishInformation}>
+    Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.
+    </div>
     ${metadata.constructorInput}
     <div class=${css.actions}>
       <button id="publish" class="${css.button} ${css.deploy}" onclick=${deployContract} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
@@ -69,16 +72,16 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     </div>
   </div>`
   topContainer.appendChild(ctor)
-
+  
   const el = bel`<div class=${css.smartcontractui}>
     <section class=${css.constructorFn}>
       <h1 class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
         ${metadata.constructorName}
-        <span class="${css.icon} ${css.expend}"><i class="fa fa-angle-right" title="Expand to see the details"></i></span>
+        <span class="${css.icon} ${css.expand}"><i class="fa fa-angle-right" title="Expand to see the details"></i></span>
       </h1>
     </section>
     ${topContainer}
-    <section class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</section>
+    <section class=${css.functions}>${sorted.map(fn => functions(fn) )}</section>
   </div>`
 
   updateTheme(vars)
@@ -92,6 +95,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
   }
   function getConstructorName() {
     var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
+    console.log(solcMetadata.settings.compilationTarget[file]);
     return solcMetadata.settings.compilationTarget[file]
   }
   function getConstructorInput() {
@@ -159,7 +163,7 @@ function smartcontractui ({ data, theme = {} }, protocol) {
     var theme = { classes: css, colors}
     var name = field.name
     var type = field.type
-    var inputField = getInputField( {theme, type, cb})
+    var inputField = getInputField( {theme, type, cb, blur})
     var inputContainer = bel`
       <div class=${css.inputContainer}>
         <label class=${css.inputParam} title="data type: ${type}">${name || 'key'}</label>
@@ -167,43 +171,104 @@ function smartcontractui ({ data, theme = {} }, protocol) {
       </div>`
     return inputContainer
     function cb (msg, el, value) {
+      var current
       var oldOutput = el.parentNode.querySelector("[class^='output']")
       var output = oldOutput ? oldOutput : output = bel`<span class=${css.output}></span>`
       output.innerHTML = ""
       output.innerHTML = msg ? `<span class=${css.valError} title="${msg}"><i class="fa fa-exclamation"></i></span>` : `<span class=${css.valSuccess} title="The value is valid."><i class="fa fa-check"></i></span>`
       el.parentNode.appendChild(output)
+      if (output.children[0].classList.contains(css.valError)) {
+        if(el.parentNode.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
+          current = el.parentNode.parentNode.parentNode.parentNode
+          // console.log('this: ', e.target);
+          // console.log('focus: ', current);
+        } else if (el.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
+          current = el.parentNode.parentNode.parentNode
+          // console.log('this: ', e.target);
+          // console.log('focus: ', current);
+        } else if (el.parentNode.parentNode.classList.contains(css.inputContainer)) {
+          current = el.parentNode.parentNode
+          // console.log('this: ', e.target);
+          // console.log('focus: ', current);
+        }
+        el.classList.add(css.invalidated)
+        current.classList.add(css.invalidated)
+      } else {
+        if(el.parentNode.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
+          current = el.parentNode.parentNode.parentNode.parentNode
+          // console.log('this: ', e.target);
+          // console.log('focus: ', current);
+        } else if (el.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
+          current = el.parentNode.parentNode.parentNode
+          // console.log('this: ', e.target);
+          // console.log('focus: ', current);
+        } else if (el.parentNode.parentNode.classList.contains(css.inputContainer)) {
+          current = el.parentNode.parentNode
+          // console.log('this: ', e.target);
+          // console.log('focus: ', current);
+        } 
+        el.classList.remove(css.invalidated)
+        current.classList.remove(css.invalidated)
+      }
+      
     }
   }
-  function getInputField ({ theme, type, cb}) {
+  function getInputField ({ theme, type, cb, focus, blur}) {
     var field
     if ((type.search(/\]/) != -1)) {
       var arrayInfo = type.split('[')[1]
       var digit = arrayInfo.search(/\d/)
-      field = inputArray({ theme, type, cb })
+      field = inputArray({ theme, type, cb, focus, blur })
     } else {
-      if ((type.search(/\buint/) != -1) || (type.search(/\bint/) != -1)) field = inputInteger({ theme, type, cb })
-      if (type.search(/\bbyte/) != -1) field = inputByte({ theme, type, cb })
-      if (type.search(/\bstring/) != -1) field = inputString({ theme, type, cb })
-      if (type.search(/\bfixed/) != -1) field = inputInteger({ theme, type, cb })
-      if (type.search(/\bbool/) != -1) field = inputBoolean({ theme, type, cb })
-      if (type.search(/\baddress/) != -1) field = inputAddress({ theme, type, cb })
+      if ((type.search(/\buint/) != -1) || (type.search(/\bint/) != -1)) field = inputInteger({ theme, type, cb, focus, blur })
+      if (type.search(/\bbyte/) != -1) field = inputByte({ theme, type, cb, focus, blur })
+      if (type.search(/\bstring/) != -1) field = inputString({ theme, type, cb, focus, blur })
+      if (type.search(/\bfixed/) != -1) field = inputInteger({ theme, type, cb, focus, blur })
+      if (type.search(/\bbool/) != -1) field = inputBoolean({ theme, type, cb, focus, blur })
+      if (type.search(/\baddress/) != -1) field = inputAddress({ theme, type, cb, focus, blur })
     }
     return field
+    function focus(e) {
+      var current
+      let containers = document.querySelectorAll(`.${css.inputContainer}`)
+      containers.forEach( container => container.classList.remove(css.focus))
+      if(e.target.parentNode.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
+        current = e.target.parentNode.parentNode.parentNode.parentNode
+      } else if (e.target.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
+        current = e.target.parentNode.parentNode.parentNode
+      } else if (e.target.parentNode.parentNode.classList.contains(css.inputContainer)) {
+        current = e.target.parentNode.parentNode
+      } 
+      current.classList.add(css.focus)
+    }
+    function blur(e) {
+      var current
+      if (e.target.parentNode.parentNode.classList.contains(css.inputContainer)) {
+        current = e.target.parentNode.parentNode
+      } else if (e.target.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
+        current = e.target.parentNode.parentNode.parentNode
+      } else if(e.target.parentNode.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
+        current = e.target.parentNode.parentNode.parentNode.parentNode
+      }    
+      current.classList.remove(css.focus)
+    }
   }
   function functions (fn) {
     const glossary = require('glossary')
-    var theme = { classes: css }
-    var label = fn.stateMutability
-    var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><span class=${css.name}>${fn.name}</span></a>`
-    var title = bel`<h3 class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</h3>`
-    var send = bel`<button class="${css.button} ${css.send}"
-              onclick=${e => sendTx(fn.name, label, e)}>SEND <i class="${css.icon} fa fa-arrow-right"></i></button>`
-    var functionClass = css[label]
-    var el = bel`
+    let theme = { classes: css }
+    let label = fn.stateMutability
+    let fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><span class=${css.name}>${fn.name}</span></a>`
+    let constructorIcon = bel`<span class="${css.icon} ${css.expand}"><i class="fa fa-angle-right"></i></span>`
+    let title = bel`<h3 class=${css.title} onclick=${e=>toggle(e, null, constructorIcon)}>${fnName} ${constructorIcon}</h3>`
+    let send = bel`<button class="${css.button} ${css.send}" onclick=${e => sendTx(fn.name, label, e)} disabled>SEND <i class="${css.icon} fa fa-arrow-right"></i></button>`
+    let testButton = bel`<button class="${css.button} ${css.send}" onclick=${ e => sendValue( fn.name, label, e) }>Send</button>`
+    let functionClass = css[label]
+    let el = bel`
     <div class=${css.fnContainer}>
       <div class="${functionClass} ${css.function}">
         ${title}
         <div class=${css.visible}>
+          <div class=${css.logs}></div>
           <div class=${css.inputsList}>
             ${fn.inputs}
           </div>
@@ -213,77 +278,156 @@ function smartcontractui ({ data, theme = {} }, protocol) {
         </div>
       </div>
     </div>`
-    if (label === 'payable')  send.parentNode.insertAdjacentElement('beforeBegin', inputPayable({ theme, label}))
+    if (label === 'payable')  send.parentNode.insertAdjacentElement('beforeBegin', inputPayable({ theme, label, focus, blur}))
     return el
-  }
-  async function sendTx (fnName, label, e) { //CHANGE
-    var theme = { classes: css, colors }
-    var loader = bel`<div class=${css.txReturnItem}>${loadingAnimation(colors, 'Awaiting network confirmation')}</div>`
-    var container = e.target.parentNode.parentNode
-    var sibling = e.target.parentNode.previousElementSibling
-    var txReturn = container.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
-    if (contract) {  // if deployed
-      container.insertBefore(txReturn, sibling)
-      // container.appendChild(txReturn)
-      txReturn.appendChild(loader)
-      let signer = await provider.getSigner()
-      var allArgs = getArgs(container, 'inputContainer')
-      const args = allArgs.args
-      try {
-        let contractAsCurrentSigner = contract.connect(signer)
-        const fn = contract.interface.functions[fnName]
-        var transaction
-        if (allArgs.overrides) { transaction = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
-        else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
-        const output = fn.type === "transaction" ?
-          await getTxOutput(contract, fnName, provider, args) : null
-        const data = { contract, solcMetadata, provider, transaction, fnName, output } // CHANGE
-        loader.replaceWith(await makeReturn({ data }, () => {}))
-      } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
-    } else {
-      let deploy = document.querySelector("#publish")
-      deploy.classList.add(css.bounce)
-      setTimeout(()=>deploy.classList.remove(css.bounce), 3500)
+    function focus(e) {
+      var current
+      if (e.target.parentNode.parentNode.classList.contains(css.inputContainer)) {
+        current = e.target.parentNode.parentNode
+      } else if (e.target.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
+        current = e.target.parentNode.parentNode.parentNode
+      } else if(e.target.parentNode.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
+        current = e.target.parentNode.parentNode.parentNode.parentNode
+      }
+      current.classList.add(css.focus)
+    }
+    function blur(e) {
+      var current
+      if (e.target.parentNode.parentNode.classList.contains(css.inputContainer)) {
+        current = e.target.parentNode.parentNode
+      } else if (e.target.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
+        current = e.target.parentNode.parentNode.parentNode
+      } else if(e.target.parentNode.parentNode.parentNode.parentNode.classList.contains(css.inputContainer)) {
+        current = e.target.parentNode.parentNode.parentNode.parentNode.parentNode
+      }    
+      current.classList.remove(css.focus)
     }
   }
+  function sendValue(fn, label, e) {
+    let theme = { classes: css, colors }
+    let loader = bel`<div class=${css.txReturnItem}>${loadingAnimation(colors, 'Awaiting network confirmation')}</div>`
+    let container = e.target.parentNode.parentNode.parentNode.parentNode
+    let visible = container.querySelector(`[class^=${css.visible}]`)
+    let logs = visible.querySelector(`[class^=${css.logs}]`)
+    let txReturn = logs.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
+    // let fields = container.querySelectorAll(`[class^=${css.inputContainer}]`)
+    let fields = [...container.querySelectorAll(`.${css.inputContainer}`)]
+    let el = bel`<div class=${css.txReturnItem}></div>`
+    let timer = new Date
+    let span = bel`<span class=${css.txReturnCount}>${timer.getUTCHours()}:${timer.getUTCMinutes()}:${timer.getUTCSeconds()}</span>`
+
+    logs.appendChild(txReturn)
+    // txReturn.appendChild(loader)
+
+    el.appendChild(bel`<div class=${css.txReturnValue}>'wrwrwerw' ${timer.getUTCSeconds()}</div>`)
+    el.appendChild(span)
+
+    try {
+      if (fields) {
+        fields.forEach( field => {
+          let inputs = field.querySelectorAll('input')
+          inputs.forEach( input => {
+            if (input.type === 'number') {
+              el.innerText = input.value
+              el.appendChild(span)
+            }
+          })
+        })
+      }
+      txReturn.appendChild(el)
+      logs.scrollTop = logs.scrollHeight
+    } catch(e) {
+      console.log(txReturn.children)
+      txReturn.children.length > 1  ? txReturn.removeChild(loader) : logs.removeChild(txReturn)
+    }
+  }
+  async function sendTx (fnName, label, e) {
+    let theme = { classes: css, colors }
+    let loader = bel`<div class=${css.txReturnItem}>${loadingAnimation(colors, 'Awaiting network confirmation')}</div>`
+    let container = e.target.parentNode.parentNode.parentNode.parentNode
+    let visible = container.querySelector(`.${css.visible}`)
+    let logs = visible.querySelector(`.${css.logs}`)
+    let txReturn = logs.querySelector(`.${css.txReturn}`) || bel`<div class=${css.txReturn}></div>`
+
+    // if (!contract) {
+    //   let deploy = document.querySelector("#publish")
+    //   deploy.classList.add(css.bounce)
+    //   setTimeout(()=>deploy.classList.remove(css.bounce), 3500)
+    //   return 
+    // }
+    
+    // if deployed
+    // container.insertBefore(txReturn, sibling)
+    // container.appendChild(txReturn)
+    // txReturn.appendChild(loader)
+    logs.appendChild(txReturn)
+    txReturn.appendChild(loader)
+    logs.scrollTop = logs.scrollHeight
+
+    let signer = await provider.getSigner()
+    let allArgs = getArgs(container, 'inputContainer')
+    let args = allArgs.args
+    try {
+      let contractAsCurrentSigner = contract.connect(signer)
+      var transaction
+      if (allArgs.overrides) { transaction = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
+      else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
+      let abi = solcMetadata.output.abi
+      const data = { contract, solcMetadata, provider, transaction, fnName }
+      loader.replaceWith(await makeReturn({ data }, () => {}))
+      logs.scrollTop = logs.scrollHeight
+    } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : logs.removeChild(txReturn) }
+    
+  }
   function toggleAll (e) {
-    var fnContainer = e.currentTarget.parentElement.parentElement.children[2]
-    var constructorToggle = e.currentTarget.children[0]
-    var constructorIcon = constructorToggle.children[0]
+    let fnContainer = e.currentTarget.parentElement.parentElement.children[2]
+    let constructorToggle = e.currentTarget.children[0]
+    let constructorIcon = constructorToggle.children[0]
     constructorToggle.removeChild(constructorIcon)
-    var on = bel`<i class="fa fa-angle-right ${css.collapse}" title="Collapse">`
-    var off = bel`<i class="fa fa-angle-right ${css.expend}" title="Expand to see the details">`
-    var icon = constructorIcon.className.includes('expend') ? on : off
+    let off = bel`<i class="fa fa-angle-right" title="Collapse">`
+    let on = bel`<i class="fa fa-angle-right" title="Expand to see the details">`
+    let icon = constructorToggle.className.includes('expand') ? on : off
+    let toggleClass = constructorToggle.classList.contains(css.expand) ? css.collapse : css.expand
+
+    constructorToggle.className = `${css.icon} ${toggleClass}`
     constructorToggle.appendChild(icon)
+    
+    
     for (var i = 0; i < fnContainer.children.length; i++) {
       var fn = fnContainer.children[i]
       var e = fn.children[0]
-      toggle(e, fn, constructorIcon)
+      toggle(e, fn, constructorToggle)
     }
   }
-  function toggle (e, fun, constructorIcon) {
+  function toggle (e, fun, constructorToggle) {
     var fn
     var toggleContainer
     // TOGGLE triggered by toggleAll
+    // console.log(constructorIcon) // .topContainer i.fa.fa-angle-right
     if (fun != null) {
-      fn = fun.children[0]
-      toggleContainer = e.children[1]
-      var fnInputs = fn.children[1]
+      fn = fun.children[0] // .function
+      toggleContainer = e.children[1] // .visible
       // Makes sure all functions are opened or closed before toggleAll executes
-      if (constructorIcon.className.includes('expend') && fnInputs.className === css.visible.toString()) {
-        fnInputs.classList.remove(css.visible)
-        fnInputs.classList.add(css.hidden)
-        removeLogs(fn)
+      if ( constructorToggle.className.includes(css.expand) ) {
+        if (fn.querySelector(`.${css.collapse}`)) {
+          fn.querySelector(`.${css.collapse}`).className = `${css.icon} ${css.expand}`
+        }
+        toggleContainer.className = css.hidden
+      } else {
+        if (fn.querySelector(`.${css.expand}`)) {
+          fn.querySelector(`.${css.expand}`).className = `${css.icon} ${css.collapse}`
+        }
+        toggleContainer.className = css.visible
       }
-      else if (constructorIcon.className.includes('collapse') && fnInputs.className === css.hidden.toString()) {
-        fnInputs.classList.remove(css.hidden)
-        fnInputs.classList.add(css.visible)
-        addLogs(fn)
-      }
+      
     // TOGGLE triggered with onclick on function title (toggle single function)
     } else {
       fn = e.currentTarget.parentNode
-      toggleContainer = e.currentTarget.children[1]
+      if (constructorToggle.className.includes(css.expand)) {
+        constructorToggle.className = `${css.icon} ${css.collapse}`
+      } else {
+        constructorToggle.className = `${css.icon} ${css.expand}`
+      }
     }
     // TOGGLE input fields in a function
     var params = fn.children[1]
@@ -340,6 +484,14 @@ function smartcontractui ({ data, theme = {} }, protocol) {
         console.log(`[${name}] receives:`, msg)
       }))
       activateSendTx(contract)
+
+      if (contract) {
+        let buttons = document.getElementsByClassName(css.send)
+        for ( button of buttons ) {
+          button.removeAttribute('disabled')
+        }
+      }
+
     } catch (e) {
       loader.replaceWith(ctor)
     }
@@ -355,10 +507,17 @@ function smartcontractui ({ data, theme = {} }, protocol) {
   }
 }
 const classes = csjs`
+input:focus {
+  outline: none;
+}
 .button {
+  cursor: pointer;
+}
+.button:disabled {
+  cursor: not-allowed;
 }
 .smartcontractui {
-  max-width: 560px;
+  max-width: 640px;
   margin: 0 auto;
   padding: 1% 2%;
 }
@@ -381,9 +540,9 @@ const classes = csjs`
 }
 .visible {
   display: block;
-  border: 1px solid #1d1d26;
+  border: var(--visibleBorder);
   background-color: var(--visibleBackgroundColor);
-  padding: 22px 30px 10px 22px;
+  padding: 0px 30px 22px 22px;
   border-radius: 4px;
   transform: scale(1);
   transition: transform .6s, border .6s ease-out;
@@ -393,21 +552,16 @@ const classes = csjs`
   display: none;
 }
 .txReturn {
-  position: relative;
-  z-index: 3;
-  margin: 0 -30px 22px -22px;
-  max-height: 180px;
-  overflow-hidden;
-  overflow-y: auto;
+
 }
 .deploying {
   margin: 0;
 }
 .txReturnItem {
-  margin: 0 0 1px 0;
+  position: relative;
+  text-align: var(--txRetrunItemTextAlign);
+  background-color: var(--txReturnItemBackgroundColor);
   padding: 20px 0;
-  text-align: var(--txRetrunTextAlign);
-  background-color: var(--txReturnItemBackgroundColor)
 }
 .txReturnItem .infoIcon {
   right: 6px;
@@ -420,7 +574,8 @@ const classes = csjs`
   font-weight: bold;
   text-align: center;
   color: var(--contractNameColor);
-  margin: 20px 0;
+  margin-top: 20px;
+  padding-bottom: 20px;
 }
 .contractName:hover {
   opacity: .6;
@@ -460,14 +615,14 @@ const classes = csjs`
   font-size: var(--deployFontSize);
   background-color: var(--deployBackgroundColor);
   border-radius: 30px;
-  padding: 10px 17px 10px 22px;
-  position: absolute;
-  top: -8px;
-  right: -35px;
+  padding: 6px 22px;
   transition: background-color .6s ease-in-out;
-}
-.deploy:hover, .send:hover {
-  ${hover()}
+  position: relative;
+  right: -15px;
+} 
+.deploy:hover {
+  color: var(--deployHoverColor);
+  background-color: var(--deployHoverBackgroundColor);
 }
 .deploy:hover .icon, .send:hover .icon {
   animation: arrowMove 1s ease-in-out infinite;
@@ -502,15 +657,25 @@ const classes = csjs`
   color: var(--sendColor);
   font-size: var(--sendFontSize);
   background-color: var(--sendBackgroundColor);
-  padding: 10px 17px 10px 22px;
+  padding: 6px 22px;
   border-radius: 30px;
-  position: absolute;
-  right: -35px;
-  bottom: -28px;
   transition: background-color .6s ease-in-out;
+  position: relative;
+  right: -15px;
+}
+.send:hover {
+  color: var(--sendHoverColor);
+  background-color: var(--sendHoverBackgroundColor);
 }
 .send .icon {
   font-size: 1.2rem;
+}
+.send:disabled {
+  color: #535172;
+  background-color: rgba(0,0,0,.25);
+}
+.send:disabled .icon {
+  animation-play-state: paused;
 }
 .bounce {
   animation: bounceRight 2s infinite;
@@ -577,7 +742,7 @@ const classes = csjs`
   border-radius: var(--topContainerBorderRadius);
   border: var(--topContainerBorder);
   background: var(--topContainerBackgroundColor);
-  padding: 22px 10px 12px 22px;
+  padding: 22px 30px 22px 22px;
   transform: scale(1);
   -webkit-transition: transform .5s, border .5s ease-out;
   transition: transform .5s, border .5s ease-out;
@@ -588,7 +753,7 @@ const classes = csjs`
   grid-template-columns: auto;
 }
 .topContainer:hover, .fnContainer:hover .visible {
-  border: 1px solid rgba(103,25,255, .25);
+  border: var(--visibleBorderHover);
   box-shadow: 0px 6px 20px rgba(0, 0, 0, .3);
   transform: scale(1.02);
   -webkit-transform: scale(1.02);
@@ -602,7 +767,7 @@ const classes = csjs`
   height: 100%;
   top: 0;
   left: 0;
-  z-index: 1;
+  z-index: -1;
   opacity: 0;
   transition: opacity .6s ease-in-out;
 }
@@ -615,12 +780,6 @@ const classes = csjs`
 .topContainer:hover .txReceipt .txReturnValue {
   color: var(--txReturnValueColorHover);
 }
-.signature {
-
-}
-.pure {
-  color: var(--yellow);
-}
 .view .name {
   color: var(--fnViewNameColor)
 }
@@ -631,28 +790,39 @@ const classes = csjs`
   color: var(--fnPayableNameColor)
 }
 .icon {
-  font-size: 1.6rem;
+  font-size: 1.2rem;
   position: relative;
 }
 .output {
   position: absolute;
   top: 5px;
-  right: -25px;
+  right: 6px;
   align-self: center;
 }
 .output i {
   font-size: 1.2rem;
 }
+.output span {
+  display: inline-block;
+  border-radius: 30px;
+  width: 20px;
+  height: 20px;
+  text-align: center;
+}
 .valError {
   color: var(--valErrorColor);
-  margin-right: 5px;
+  background-color: var(--valErrorBackgroundColor);
+  margin-top: 2px;
+  transition: colors .6s, background-color .6s ease-in-out;
 }
 .valSuccess {
   color: var(--valSuccessColor);
+  background-color: var(--valSuccessBackgroundColor);
+  transition: colors .6s, background-color .6s ease-in-out;
 }
 .inputContainer {
   display: grid;
-  grid-template-columns: 100px auto;
+  grid-template-columns: 25% auto;
   grid-template-rows: auto;
   margin-bottom: 22px;
   position: relative;
@@ -663,7 +833,8 @@ const classes = csjs`
   color: var(--inputParamColor);
   font-size: var(--inputParamFontSize);
   text-align: var(--inputParamTextAlign);
-  transition: color .6s ease-in-out;
+  word-break: break-all;
+  transition: color .3s ease-in-out;
 }
 .inputFields {
   position: relative;
@@ -681,21 +852,23 @@ const classes = csjs`
   text-align: var(--inputFieldTextAlign);
   padding: 6px 28px 6px 12px;
   border-radius: var(--inputFieldBorderRadius);
-  border: var(--inputFieldBorder);
-  width: calc(100% - 40px)
+  border: 1px solid var(--inputFieldBorderColor);
+  width: calc(100% - 40px);
+  transition: border .6s ease-in-out;
 }
 .inputField::placeholder {
   color: var(--inputFieldPlaceholderColor);
 }
 .integerValue {
-  width: calc(100% - 26px);
+  width: calc(100% - 42px);
   font-size: var(--integerValueFontSize);
   color: var(--integerValueColor);
   background-color: var(--integerValueBackgroundColor);
   border-radius: var(--integerValueBorderRadius);
   border: var(--integerValueBorder);
   text-align: var(--integerValueTextAlign);
-  padding: 6px 12px;
+  padding: 6px 30px 6px 10px;
+  transition: border .6s ease-in-out;
 }
 .integerValue::placeholder {
   color: var(--integerValuePlaceholderColor);
@@ -708,9 +881,6 @@ const classes = csjs`
   border-radius: 3px;
   grid-row: 2;
 }
-.topContainer:hover .integerSlider::-webkit-slider-runnable-track, .fnContainer:hover .integerSlider::-webkit-slider-runnable-track {
-  background-color: #6700FF;
-}
 /* track */
 .integerSlider::-webkit-slider-runnable-track {
   width: 100%;
@@ -720,7 +890,13 @@ const classes = csjs`
   grid-row: 2;
   transition: background-color .3s ease-in-out;
 }
+.topContainer:hover .integerSlider::-webkit-slider-runnable-track, .fnContainer:hover .integerSlider::-webkit-slider-runnable-track {
+  background-color: var(--integerSliderHoverBackgroundColor);
+}
 .integerSlider:active::-webkit-slider-runnable-track {
+  background-color: var(--integerSliderFocusBackgroundColor);
+}
+.topContainer:hover .integerSlider:active::-webkit-slider-runnable-track, .fnContainer:hover .integerSlider:active::-webkit-slider-runnable-track {
   background-color: var(--integerSliderFocusBackgroundColor);
 }
 .integerSlider::-moz-range-track {
@@ -741,15 +917,12 @@ input[type="range"]::-ms-track {
 input[type="range"]::-ms-fill-lower {
   background: var(--integerSliderBackgroundColor);
 }
-
 input[type="range"]:focus::-ms-fill-lower {
   background: var(--integerSliderFocusBackgroundColor);
 }
-
 input[type="range"]::-ms-fill-upper {
   background: var(--integerSliderBackgroundColor);
 }
-
 input[type="range"]:focus::-ms-fill-upper {
   background: #ddd;
 }
@@ -863,23 +1036,25 @@ input[type="range"]:focus::-ms-fill-upper {
 }
 .actions {
   position: relative;
-  text-align: right;
+  text-align: center;
   z-index: 3;
 }
-.expend {
+.expand, .collapse {
   position: absolute;
   right: 5px;
   top: 3px;
+  z-index: 3;
 }
-.expend i {
+.expand i {
   transform: rotate(90deg);
+  font-size: 1.2rem;
   margin-left: -15px;
+  animation: expendOn .3s ease-in forwards;
 }
-.expend .expend {
-  animation: expendOff .3s ease-in forwards;
-}
-.expend .collapse {
-  animation: expendOn .3s ease-out forwards;
+.collapse i {
+  font-size: 1.2rem;
+  margin-left: -15px;
+  animation: expendOff .3s ease-out forwards;
 }
 @-webkit-keyframes expendOn {
   0% {
@@ -905,7 +1080,6 @@ input[type="range"]:focus::-ms-fill-upper {
     transform: rotate(0deg);
   }
 }
-
 @keyframes expendOff {
   0% {
     transform: rotate(90deg);
@@ -914,7 +1088,6 @@ input[type="range"]:focus::-ms-fill-upper {
     transform: rotate(0deg);
   }
 }
-
 .txReceipt {
   display: grid;
   grid-template: auto / 1fr;
@@ -937,11 +1110,10 @@ input[type="range"]:focus::-ms-fill-upper {
 .inputArea {
   display: grid;
   grid-template: auto / auto auto 30px;
-  grid-column-gap: 5px;
+  grid-column-gap: 15px;
 }
 .currency {
   font-family: var(--bodyFont);
-  border-radius: var(--currencyBorderRadius);
   border: var(--currencyBorder);
   padding: 5px 7px;
   color: var(--currencyColor);
@@ -951,11 +1123,64 @@ input[type="range"]:focus::-ms-fill-upper {
 .ethIcon {
   color: var(--ethIconColor);
   font-size: var(--ethIconFontSize);
-  text-align: center;
+  text-align: left;
   align-self: center;
 }
 .inputsList {
 
+}
+.logs {
+  min-height: 100px;
+  max-height: 180px;
+  background-color: var(--logsBackgroundColor);
+  margin: 0 -30px 22px -22px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  overflow: hidden;
+  overflow-y: auto;
+}
+.txReturnCount {
+  position: absolute;
+  left: 15px;
+  top: 9px;
+  padding: 3px 8px;
+  font-size: 1.2rem;
+  border-radius: 30px;
+  color: #ffffff;
+  background-color: rgba(255,255,255, .15);
+}
+.publishInformation {
+  margin-bottom: 22px;
+  font-size: 1.4rem;
+  color: var(--publishInformationColor);
+}
+.topContainer .focus .inputParam, .topContainer .focus:hover .inputParam,
+.fnContainer .focus .inputParam, .fnContainer .focus:hover .inputParam
+{
+  color: var(--inputFocus);
+}
+.topContainer .focus .integerValue:focus, .topContainer:focus .focus:hover .integerValue:focus,
+.fnContainer .focus .integerValue:focus, .fnContainer .focus:hover .integerValue:focus,
+.topContainer .focus .inputField:focus, .topContainer .focus:hover .inputField:focus,
+.fnContainer .focus .inputField:focus, .fnContainer .focus:hover .inputField:focus,
+.topContainer .integerValue.invalidated:focus, .topContainer:hover .integerValue.invalidated:focus,
+.fnContainer .integerValue.invalidated:focus, .fnContainer:hover .integerValue.invalidated:focus,
+.topContainer .inputField.invalidated:focus, .topContainer:hover .inputField.invalidated:focus,
+.fnContainer .inputField.invalidated:focus, .fnContainer:hover .inputField.invalidated:focus
+{
+  border: 1px solid var(--inputFocus);
+}
+.topContainer .invalidated .inputParam, .topContainer .invalidated:hover .inputParam,
+.fnContainer .invalidated .inputParam, .fnContainer .invalidated:hover .inputParam
+{
+  color: var(--inputInvalidated);
+}
+.topContainer .integerValue.invalidated, .topContainer:hover .integerValue.invalidated,
+.fnContainer .integerValue.invalidated, .fnContainer:hover .integerValue.invalidated,
+.topContainer .inputField.invalidated, .topContainer:hover .inputField.invalidated,
+.fnContainer .inputField.invalidated, .fnContainer:hover .inputField.invalidated
+{
+  border: 1px solid var(--inputInvalidated);
 }
 @media (max-width: 640px) {
   .smartcontractui {
@@ -965,12 +1190,6 @@ input[type="range"]:focus::-ms-fill-upper {
 function inputStyle() {
   return `
     background-color: var(--darkSmoke);
-  `
-}
-function hover () {
-  return `
-    cursor: pointer;
-    background-color: rgba(255,255,255, .15)
   `
 }
 const variables = { // defaults
